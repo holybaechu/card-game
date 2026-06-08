@@ -5,20 +5,31 @@ import { drawRandomCards, mapInventoryRow, parseDrawInventoryInput } from "./inv
 
 describe("parseDrawInventoryInput", () => {
   it("accepts an allowed draw count", () => {
-    assert.deepEqual(parseDrawInventoryInput({ count: 1 }), { count: 1 });
-    assert.deepEqual(parseDrawInventoryInput({ count: 10 }), { count: 10 });
-    assert.deepEqual(parseDrawInventoryInput({ count: 100 }), { count: 100 });
+    assert.deepEqual(parseDrawInventoryInput({ nickname: "p1", count: 1 }), { nickname: "p1", count: 1 });
+    assert.deepEqual(parseDrawInventoryInput({ nickname: "p1", count: 10 }), { nickname: "p1", count: 10 });
+    assert.deepEqual(parseDrawInventoryInput({ nickname: "p1", count: 100 }), { nickname: "p1", count: 100 });
+  });
+
+  it("normalizes nicknames", () => {
+    assert.deepEqual(parseDrawInventoryInput({ nickname: "  junhu  ", count: 10 }), {
+      nickname: "junhu",
+      count: 10,
+    });
+  });
+
+  it("rejects missing nicknames", () => {
+    assert.throws(() => parseDrawInventoryInput({ count: 10 }), /nickname/i);
   });
 
   it("rejects caller-provided card ids", () => {
-    assert.throws(() => parseDrawInventoryInput({ cardIds: [1, 2, 2, 20] }), /count/i);
+    assert.throws(() => parseDrawInventoryInput({ nickname: "p1", count: 10, cardIds: [1, 2, 2, 20] }), /card/i);
   });
 
   it("rejects invalid counts", () => {
-    assert.throws(() => parseDrawInventoryInput({ count: 0 }), /count/i);
-    assert.throws(() => parseDrawInventoryInput({ count: 2 }), /count/i);
-    assert.throws(() => parseDrawInventoryInput({ count: 101 }), /count/i);
-    assert.throws(() => parseDrawInventoryInput({ count: "10" }), /count/i);
+    assert.throws(() => parseDrawInventoryInput({ nickname: "p1", count: 0 }), /count/i);
+    assert.throws(() => parseDrawInventoryInput({ nickname: "p1", count: 2 }), /count/i);
+    assert.throws(() => parseDrawInventoryInput({ nickname: "p1", count: 101 }), /count/i);
+    assert.throws(() => parseDrawInventoryInput({ nickname: "p1", count: "10" }), /count/i);
   });
 });
 

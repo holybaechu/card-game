@@ -1,15 +1,18 @@
 import type { GameCard } from "./cards";
+import { parseNickname } from "./player";
 
 export type MatchMode = "normal" | "ranked";
 export type MatchResult = "player-win" | "enemy-win" | "draw";
 
 export type MatchRequestInput = {
+  nickname: string;
   mode: MatchMode;
   playerCardId: number;
   enemyCardId: number;
 };
 
 export type PersistableMatchResult = {
+  nickname: string;
   mode: MatchMode;
   playerCardId: number;
   enemyCardId: number;
@@ -36,6 +39,12 @@ export function parseMatchRequestInput(input: unknown): MatchRequestInput {
 
   const value = input as MatchRequestInput & Record<string, unknown>;
 
+  if (!("nickname" in value)) {
+    throw new Error("Match request requires a valid nickname");
+  }
+
+  const nickname = parseNickname(value.nickname);
+
   if (!matchModes.has(value.mode)) {
     throw new Error("Match request requires a valid mode");
   }
@@ -56,6 +65,7 @@ export function parseMatchRequestInput(input: unknown): MatchRequestInput {
   }
 
   return {
+    nickname,
     mode: value.mode,
     playerCardId: value.playerCardId,
     enemyCardId: value.enemyCardId,
