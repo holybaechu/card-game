@@ -26,13 +26,13 @@ describe("hpPercent", () => {
 describe("updatePlayerScore", () => {
   it("only updates the player score and keeps scores non-negative", () => {
     const rankings = [
-      { name: "Player", score: 10, isPlayer: true },
-      { name: "Rival", score: 20, isPlayer: false },
+      { id: 1, nickname: "Player", score: 10, place: 1, isActivePlayer: true },
+      { id: 2, nickname: "Rival", score: 20, place: 2, isActivePlayer: false },
     ];
 
     assert.deepEqual(updatePlayerScore(rankings, -30), [
-      { name: "Player", score: 0, isPlayer: true },
-      { name: "Rival", score: 20, isPlayer: false },
+      { id: 1, nickname: "Player", score: 0, place: 1, isActivePlayer: true },
+      { id: 2, nickname: "Rival", score: 20, place: 2, isActivePlayer: false },
     ]);
   });
 });
