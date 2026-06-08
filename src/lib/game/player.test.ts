@@ -10,6 +10,10 @@ describe("parseNickname", () => {
     assert.equal(parseNickname("neo-card_99"), "neo-card_99");
   });
 
+  it("normalizes repeated literal spaces", () => {
+    assert.equal(parseNickname("player   one"), "player one");
+  });
+
   it("rejects empty, too short, too long, and unsafe nicknames", () => {
     assert.throws(() => parseNickname(""), /nickname/i);
     assert.throws(() => parseNickname("a"), /nickname/i);
