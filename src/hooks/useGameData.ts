@@ -17,10 +17,6 @@ export function useGameData(player: PlayerSession | null) {
   useEffect(() => {
     let active = true;
     if (!player) {
-      setCards(fallbackCards);
-      setRankings(fallbackRankings);
-      setInventory([]);
-      setBattle(createBattle(fallbackCards));
       return;
     }
 
@@ -41,10 +37,10 @@ export function useGameData(player: PlayerSession | null) {
   }, [player]);
 
   return {
-    battle,
-    cards,
-    inventory,
-    rankings,
+    battle: player ? battle : createBattle(fallbackCards),
+    cards: player ? cards : fallbackCards,
+    inventory: player ? inventory : [],
+    rankings: player ? rankings : fallbackRankings,
     setBattle,
     setInventory,
     setRankings,
