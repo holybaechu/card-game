@@ -80,7 +80,7 @@ export async function persistMatchResult({
 }
 
 export async function persistInventoryDraw({
-  client = createServerSupabaseClient() as InventoryPersistenceClient | null,
+  client = createServerSupabaseClient() as unknown as InventoryPersistenceClient | null,
   cards,
   draw,
   random,
