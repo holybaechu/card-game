@@ -28,7 +28,7 @@ export function HomeScreen({
       </div>
       <div className="home-center">
         <p className="owner-name">
-          {player.nickname} · {player.score}
+          {player.nickname} / Score {player.score}
         </p>
         <h1 className="game-title">
           CARD
@@ -62,4 +62,3 @@ export function HomeScreen({
     </section>
   );
 }
-

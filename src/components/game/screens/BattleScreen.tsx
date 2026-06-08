@@ -115,11 +115,11 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
   }, [battle.status, battle.tick]);
 
   return (
-    <section className="battle-screen" aria-label={screen === "normal" ? "일반전" : "랭크전"}>
+    <section className="battle-screen" aria-label={screen === "normal" ? "Normal battle" : "Ranked battle"}>
       <div className="screen-heading">
-        <p>{screen === "normal" ? "일반전" : "랭크전"}</p>
+        <p>{screen === "normal" ? "Normal" : "Ranked"}</p>
         <h2>{battle.status === "running" ? "AUTO BATTLE" : battle.status === "player-win" ? "WIN" : battle.status === "enemy-win" ? "LOSE" : "DRAW"}</h2>
-        <span>{screen === "ranked" ? `현재 점수 ${rankedScore}` : "1초마다 자동 공격"}</span>
+        <span>{screen === "ranked" ? `Current score ${rankedScore}` : "Auto attacks every second"}</span>
       </div>
 
       <div className="battle-arena" ref={arenaRef}>
@@ -142,7 +142,7 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
         </div>
         <div className="fighter" data-fighter="player">
           <PlayingCard card={battle.player} size="medium" />
-          <div className="hp-frame" aria-label={`내 체력 ${battle.playerHp}`}>
+          <div className="hp-frame" aria-label={`Player HP ${battle.playerHp}`}>
             <span style={{ width: `${hpPercent(battle.playerHp, battle.player.hp)}%` }} />
           </div>
           <strong>{battle.player.name}</strong>
@@ -152,14 +152,14 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
 
         <div className="fighter" data-fighter="enemy">
           <PlayingCard card={battle.enemy} size="medium" />
-          <div className="hp-frame enemy-hp" aria-label={`상대 체력 ${battle.enemyHp}`}>
+          <div className="hp-frame enemy-hp" aria-label={`Enemy HP ${battle.enemyHp}`}>
             <span style={{ width: `${hpPercent(battle.enemyHp, battle.enemy.hp)}%` }} />
           </div>
           <strong>{battle.enemy.name}</strong>
         </div>
       </div>
 
-      <div className="battle-actions">{screen === "ranked" && battle.status === "player-win" && <p>승리 보상 +25점</p>}</div>
+      <div className="battle-actions">{screen === "ranked" && battle.status === "player-win" && <p>Victory reward +25</p>}</div>
     </section>
   );
 }
