@@ -41,8 +41,8 @@ describe("drawRandomCards", () => {
     ];
 
     assert.deepEqual(
-      drawRandomCards(cards, 3, () => 0.99).map((card) => card.id),
-      [2, 2, 2],
+      drawRandomCards(cards, 10, () => 0.99).map((card) => card.id),
+      [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     );
   });
 
