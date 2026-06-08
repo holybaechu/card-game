@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { createBattle, hpPercent, updatePlayerScore } from "./battle";
+import { createBattle, hpPercent, updatePlayerScore, updateSessionScore } from "./battle";
 import { fallbackCards } from "./cards";
 
 describe("createBattle", () => {
@@ -34,5 +34,23 @@ describe("updatePlayerScore", () => {
       { id: 1, nickname: "Player", score: 0, place: 1, isActivePlayer: true },
       { id: 2, nickname: "Rival", score: 20, place: 2, isActivePlayer: false },
     ]);
+  });
+});
+
+describe("updateSessionScore", () => {
+  it("adds positive score deltas to the active player session", () => {
+    assert.deepEqual(updateSessionScore({ id: 1, nickname: "Player", score: 1000 }, 25), {
+      id: 1,
+      nickname: "Player",
+      score: 1025,
+    });
+  });
+
+  it("does not let the active player score go below zero", () => {
+    assert.deepEqual(updateSessionScore({ id: 1, nickname: "Player", score: 10 }, -25), {
+      id: 1,
+      nickname: "Player",
+      score: 0,
+    });
   });
 });

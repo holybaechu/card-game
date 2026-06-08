@@ -14,6 +14,7 @@ describe("handleMatchPost", () => {
           mode: "ranked",
           playerCardId: 1,
           enemyCardId: 2,
+          result: "player-win",
         }),
       }),
       async (match) => {
@@ -51,10 +52,11 @@ describe("handleMatchPost", () => {
       mode: "ranked",
       playerCardId: 1,
       enemyCardId: 2,
+      result: "player-win",
     });
   });
 
-  it("rejects results from the browser", async () => {
+  it("rejects invalid results from the browser", async () => {
     const response = await handleMatchPost(
       new Request("http://localhost/api/matches", {
         method: "POST",
@@ -63,7 +65,7 @@ describe("handleMatchPost", () => {
           mode: "ranked",
           playerCardId: 1,
           enemyCardId: 2,
-          result: "player-win",
+          result: "free-win",
         }),
       }),
       async () => ({ persisted: true, match: null, player: null, rankings: [] }),

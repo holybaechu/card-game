@@ -4,7 +4,7 @@ import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
 import { recordInventoryDraw } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
-import { mergeInventoryEntries, type InventoryDrawInput, type InventoryEntry } from "@/lib/game/inventory";
+import { mergeDrawnCardsIntoInventory, mergeInventoryEntries, type InventoryDrawInput, type InventoryEntry } from "@/lib/game/inventory";
 import { gachaRevealTiming } from "@/lib/game/animation";
 import type { PlayerSession } from "@/lib/game/player";
 import type { GameScreen } from "./useBattleFlow";
@@ -82,6 +82,8 @@ export function useGachaFlow({
 
       if (result.persisted) {
         setInventory((current) => mergeInventoryEntries(current, result.inventory));
+      } else {
+        setInventory((current) => mergeDrawnCardsIntoInventory(current, result.drawnCards));
       }
       setPendingCards(result.drawnCards);
     });

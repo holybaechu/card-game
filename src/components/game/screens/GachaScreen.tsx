@@ -113,11 +113,11 @@ export function GachaScreen({
   }, [gachaCards.length, gachaCount, revealTiming.effectSeconds]);
 
   return (
-    <section className="gacha-screen" aria-label="Gacha">
+    <section className="gacha-screen" aria-label="가챠">
       <div className="screen-heading">
-        <p>Gacha</p>
-        <h2>CARD DRAW</h2>
-        <span>{isDrawing ? `Drawing cards ${gachaCards.length}/${gachaCount}` : "Choose how many cards to draw"}</span>
+        <p>가챠</p>
+        <h2>카드 뽑기</h2>
+        <span>{isDrawing ? `카드 뽑는 중 ${gachaCards.length}/${gachaCount}` : "뽑을 카드 수를 선택하세요"}</span>
       </div>
 
       <div className="gacha-stage" ref={stageRef}>
@@ -126,13 +126,13 @@ export function GachaScreen({
         <div className="gacha-ring gacha-ring-two" aria-hidden="true" />
         <div className="gacha-buttons">
           <button className="neon-button gacha-draw-button" onClick={() => onStartGacha(1)} disabled={isDrawing} type="button">
-            Draw 1
+            1장 뽑기
           </button>
           <button className="neon-button gacha-draw-button" onClick={() => onStartGacha(10)} disabled={isDrawing} type="button">
-            Draw 10
+            10장 뽑기
           </button>
           <button className="neon-button gacha-draw-button" onClick={() => onStartGacha(100)} disabled={isDrawing} type="button">
-            Draw 100
+            100장 뽑기
           </button>
         </div>
 

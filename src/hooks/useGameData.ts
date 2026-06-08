@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { createBattle, type BattleState } from "@/lib/game/battle";
 import { fallbackCards, type GameCard } from "@/lib/game/cards";
 import { fallbackRankings, getInitialGameData, type RankingEntry } from "@/lib/game/backend";
-import type { InventoryEntry } from "@/lib/game/inventory";
+import { mergeLoadedInventory, type InventoryEntry } from "@/lib/game/inventory";
 import type { PlayerSession } from "@/lib/game/player";
 
 export function useGameData(player: PlayerSession | null) {
@@ -27,7 +27,7 @@ export function useGameData(player: PlayerSession | null) {
 
       setCards(data.cards);
       setRankings(data.rankings);
-      setInventory(data.inventory);
+      setInventory((current) => mergeLoadedInventory(current, data.inventory));
       setBattle(createBattle(data.cards));
     });
 

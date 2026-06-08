@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { createBattle, type BattleState, type BattleStatus } from "@/lib/game/battle";
+import { createBattle, type BattleState, type BattleStatus, updatePlayerScore, updateSessionScore } from "@/lib/game/battle";
 import { recordMatchResult, type RankingEntry } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
 import type { PlayerSession } from "@/lib/game/player";
@@ -105,9 +105,14 @@ export function useBattleFlow({
         mode: screen,
         playerCardId: battle.player.id,
         enemyCardId: battle.enemy.id,
+        result: battle.status,
       },
     }).then((result) => {
       if (!result.persisted) {
+        if (result.match && result.match.scoreDelta !== 0) {
+          setPlayer((current) => (current ? updateSessionScore(current, result.match?.scoreDelta ?? 0) : current));
+          setRankings((current) => updatePlayerScore(current, result.match?.scoreDelta ?? 0));
+        }
         return;
       }
 

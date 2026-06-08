@@ -1,5 +1,6 @@
 import { fallbackCards, type GameCard } from "./cards";
 import type { RankingEntry } from "./backend";
+import type { PlayerSession } from "./player";
 
 export type BattleStatus = "running" | "player-win" | "enemy-win" | "draw";
 
@@ -37,4 +38,8 @@ export function hpPercent(value: number, max: number) {
 
 export function updatePlayerScore(rankings: RankingEntry[], delta: number) {
   return rankings.map((entry) => (entry.isActivePlayer ? { ...entry, score: Math.max(0, entry.score + delta) } : entry));
+}
+
+export function updateSessionScore(player: PlayerSession, delta: number) {
+  return { ...player, score: Math.max(0, player.score + delta) };
 }

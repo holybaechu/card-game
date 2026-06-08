@@ -22,8 +22,8 @@ export function PlayingCard({
         <span>{card.name}</span>
       </div>
       <div className="card-stats">
-        <span>ATK {card.attack}</span>
-        <span>HP {card.hp}</span>
+        <span>공격 {card.attack}</span>
+        <span>체력 {card.hp}</span>
       </div>
     </article>
   );

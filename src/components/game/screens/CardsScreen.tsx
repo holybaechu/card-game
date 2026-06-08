@@ -4,10 +4,10 @@ import { getInventoryQuantity, type InventoryEntry } from "@/lib/game/inventory"
 
 export function CardsScreen({ cards, inventory }: { cards: GameCard[]; inventory: InventoryEntry[] }) {
   return (
-    <section className="collection-screen" aria-label="Card collection">
+    <section className="collection-screen" aria-label="카드 컬렉션">
       <div className="screen-heading">
-        <p>Cards</p>
-        <h2>CARD COLLECTION</h2>
+        <p>카드</p>
+        <h2>카드 컬렉션</h2>
       </div>
       <div className="card-grid">
         {cards.map((card) => (

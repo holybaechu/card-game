@@ -2,11 +2,11 @@ import type { RankingEntry } from "@/lib/game/backend";
 
 export function RankingScreen({ rankedRows }: { rankedRows: RankingEntry[] }) {
   return (
-    <section className="ranking-screen" aria-label="Ranking">
+    <section className="ranking-screen" aria-label="랭킹">
       <div className="screen-heading">
-        <p>Ranking</p>
-        <h2>RANKING</h2>
-        <span>Top scores</span>
+        <p>랭킹</p>
+        <h2>랭킹</h2>
+        <span>상위 점수</span>
       </div>
       <ol className="ranking-list">
         {rankedRows.map((entry) => (

@@ -9,6 +9,7 @@ export type MatchRequestInput = {
   mode: MatchMode;
   playerCardId: number;
   enemyCardId: number;
+  result?: MatchResult;
 };
 
 export type PersistableMatchResult = {
@@ -21,6 +22,7 @@ export type PersistableMatchResult = {
 };
 
 const matchModes = new Set<MatchMode>(["normal", "ranked"]);
+const matchResults = new Set<MatchResult>(["player-win", "enemy-win", "draw"]);
 
 function assertPositiveInteger(value: unknown, label: string): asserts value is number {
   if (!Number.isInteger(value) || Number(value) <= 0) {
@@ -49,8 +51,9 @@ export function parseMatchRequestInput(input: unknown): MatchRequestInput {
     throw new Error("Match request requires a valid mode");
   }
 
-  if ("result" in value) {
-    throw new Error("Match request result is server controlled");
+  const result = "result" in value ? value.result : undefined;
+  if (result !== undefined && !matchResults.has(result as MatchResult)) {
+    throw new Error("Match request requires a valid result");
   }
 
   if ("scoreDelta" in value) {
@@ -69,6 +72,7 @@ export function parseMatchRequestInput(input: unknown): MatchRequestInput {
     mode: value.mode,
     playerCardId: value.playerCardId,
     enemyCardId: value.enemyCardId,
+    ...(result !== undefined ? { result: result as MatchResult } : {}),
   };
 }
 
@@ -86,7 +90,8 @@ export function createServerMatchResult(request: MatchRequestInput, cards: GameC
 
   const playerPower = cardPower(player);
   const enemyPower = cardPower(enemy);
-  const result: MatchResult = playerPower > enemyPower ? "player-win" : enemyPower > playerPower ? "enemy-win" : "draw";
+  const result: MatchResult =
+    request.result ?? (playerPower > enemyPower ? "player-win" : enemyPower > playerPower ? "enemy-win" : "draw");
 
   return {
     ...request,

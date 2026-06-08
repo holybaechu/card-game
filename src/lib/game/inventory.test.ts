@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { drawRandomCards, mapInventoryRow, parseDrawInventoryInput } from "./inventory";
+import { drawRandomCards, mapInventoryRow, mergeDrawnCardsIntoInventory, mergeLoadedInventory, parseDrawInventoryInput } from "./inventory";
 
 describe("parseDrawInventoryInput", () => {
   it("accepts an allowed draw count", () => {
@@ -58,5 +58,30 @@ describe("mapInventoryRow", () => {
 
   it("rejects invalid quantities", () => {
     assert.throws(() => mapInventoryRow({ card_id: 3, quantity: -1 }), /quantity/i);
+  });
+});
+
+describe("mergeDrawnCardsIntoInventory", () => {
+  it("increments current inventory quantities using drawn cards", () => {
+    const cards = [
+      { id: 1, name: "One", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 },
+      { id: 2, name: "Two", rank: "SR", attack: 20, hp: 100, imagePath: "/cards/2.png", sortOrder: 2 },
+      { id: 1, name: "One", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 },
+    ];
+
+    assert.deepEqual(mergeDrawnCardsIntoInventory([{ cardId: 1, quantity: 2 }], cards), [
+      { cardId: 1, quantity: 4 },
+      { cardId: 2, quantity: 1 },
+    ]);
+  });
+});
+
+describe("mergeLoadedInventory", () => {
+  it("preserves local draw quantities when initial inventory loads later", () => {
+    assert.deepEqual(mergeLoadedInventory([{ cardId: 15, quantity: 1 }], []), [{ cardId: 15, quantity: 1 }]);
+  });
+
+  it("uses loaded inventory when there are no local quantities yet", () => {
+    assert.deepEqual(mergeLoadedInventory([], [{ cardId: 3, quantity: 2 }]), [{ cardId: 3, quantity: 2 }]);
   });
 });

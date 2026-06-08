@@ -20,7 +20,25 @@ describe("parseMatchRequestInput", () => {
     });
   });
 
-  it("rejects caller-provided results", () => {
+  it("accepts the battle result while keeping score deltas server controlled", () => {
+    const match = parseMatchRequestInput({
+      nickname: "p1",
+      mode: "ranked",
+      playerCardId: 1,
+      enemyCardId: 2,
+      result: "player-win",
+    });
+
+    assert.deepEqual(match, {
+      nickname: "p1",
+      mode: "ranked",
+      playerCardId: 1,
+      enemyCardId: 2,
+      result: "player-win",
+    });
+  });
+
+  it("rejects invalid caller-provided results", () => {
     assert.throws(
       () =>
         parseMatchRequestInput({
@@ -28,7 +46,7 @@ describe("parseMatchRequestInput", () => {
           mode: "ranked",
           playerCardId: 1,
           enemyCardId: 2,
-          result: "player-win",
+          result: "free-win",
         }),
       /result/i,
     );
@@ -107,6 +125,25 @@ describe("createServerMatchResult", () => {
       [
         { id: 1, name: "Strong", rank: "SSR", attack: 30, hp: 120, imagePath: "/cards/1.png", sortOrder: 1 },
         { id: 2, name: "Weak", rank: "R", attack: 10, hp: 100, imagePath: "/cards/2.png", sortOrder: 2 },
+      ],
+    );
+
+    assert.deepEqual(match, {
+      nickname: "p1",
+      mode: "ranked",
+      playerCardId: 1,
+      enemyCardId: 2,
+      result: "player-win",
+      scoreDelta: 25,
+    });
+  });
+
+  it("uses the resolved battle result when the client reports one", () => {
+    const match = createServerMatchResult(
+      { nickname: "p1", mode: "ranked", playerCardId: 1, enemyCardId: 2, result: "player-win" },
+      [
+        { id: 1, name: "Weak", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 },
+        { id: 2, name: "Strong", rank: "SSR", attack: 30, hp: 120, imagePath: "/cards/2.png", sortOrder: 2 },
       ],
     );
 

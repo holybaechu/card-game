@@ -22,37 +22,37 @@ export function HomeScreen({
   onLogout,
 }: HomeScreenProps) {
   return (
-    <section className="home-screen" aria-label="Home">
+    <section className="home-screen" aria-label="홈">
       <div className="side-card left-card">
         <PlayingCard card={cards[15] ?? fallbackCards[0]} size="large" spinning />
       </div>
       <div className="home-center">
         <p className="owner-name">
-          {player.nickname} / Score {player.score}
+          {player.nickname} / 점수 {player.score}
         </p>
         <h1 className="game-title">
-          CARD
+          카드
           <br />
-          GAME
+          게임
         </h1>
         <button className="neon-button compact home-logout-button" onClick={onLogout} type="button">
-          Logout
+          로그아웃
         </button>
-        <nav className="home-menu" aria-label="Main game menu">
+        <nav className="home-menu" aria-label="메인 게임 메뉴">
           <button className="neon-button" onClick={() => onStartBattle("normal")} type="button">
-            Normal
+            일반전
           </button>
           <button className="neon-button" onClick={() => onStartBattle("ranked")} type="button">
-            Ranked
+            랭크전
           </button>
           <button className="neon-button" onClick={onOpenCards} type="button">
-            Cards
+            카드
           </button>
           <button className="neon-button" onClick={onOpenRanking} type="button">
-            Ranking
+            랭킹
           </button>
           <button className="neon-button gacha-home-button" onClick={onOpenGacha} type="button">
-            Gacha
+            가챠
           </button>
         </nav>
       </div>

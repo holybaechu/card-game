@@ -67,7 +67,7 @@ export default function Home() {
       if (nextPlayer) {
         setPlayer(nextPlayer);
       } else {
-        setLoginError("Auto-login failed.");
+        setLoginError("자동 로그인에 실패했습니다.");
         window.localStorage.removeItem(NICKNAME_STORAGE_KEY);
       }
       setIsLoggingIn(false);
@@ -83,7 +83,7 @@ export default function Home() {
   function handleLoginSubmit(nickname: string) {
     const trimmedNickname = nickname.trim();
     if (!trimmedNickname) {
-      setLoginError("Please enter a nickname.");
+      setLoginError("닉네임을 입력하세요.");
       return;
     }
 
@@ -95,7 +95,7 @@ export default function Home() {
         setPlayer(nextPlayer);
         window.localStorage.setItem(NICKNAME_STORAGE_KEY, nextPlayer.nickname);
       } else {
-        setLoginError("Unable to login.");
+        setLoginError("로그인할 수 없습니다.");
       }
 
       setIsLoggingIn(false);
@@ -127,7 +127,7 @@ export default function Home() {
       <Sparkles />
       {screen !== "home" && (
         <button className="back-button" onClick={goHome} type="button">
-          Back
+          뒤로
         </button>
       )}
 

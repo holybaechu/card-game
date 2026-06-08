@@ -115,11 +115,11 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
   }, [battle.status, battle.tick]);
 
   return (
-    <section className="battle-screen" aria-label={screen === "normal" ? "Normal battle" : "Ranked battle"}>
+    <section className="battle-screen" aria-label={screen === "normal" ? "일반전" : "랭크전"}>
       <div className="screen-heading">
-        <p>{screen === "normal" ? "Normal" : "Ranked"}</p>
-        <h2>{battle.status === "running" ? "AUTO BATTLE" : battle.status === "player-win" ? "WIN" : battle.status === "enemy-win" ? "LOSE" : "DRAW"}</h2>
-        <span>{screen === "ranked" ? `Current score ${rankedScore}` : "Auto attacks every second"}</span>
+        <p>{screen === "normal" ? "일반전" : "랭크전"}</p>
+        <h2>{battle.status === "running" ? "자동 전투" : battle.status === "player-win" ? "승리" : battle.status === "enemy-win" ? "패배" : "무승부"}</h2>
+        <span>{screen === "ranked" ? `현재 점수 ${rankedScore}` : "1초마다 자동으로 공격합니다"}</span>
       </div>
 
       <div className="battle-arena" ref={arenaRef}>
@@ -142,7 +142,7 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
         </div>
         <div className="fighter" data-fighter="player">
           <PlayingCard card={battle.player} size="medium" />
-          <div className="hp-frame" aria-label={`Player HP ${battle.playerHp}`}>
+          <div className="hp-frame" aria-label={`플레이어 체력 ${battle.playerHp}`}>
             <span style={{ width: `${hpPercent(battle.playerHp, battle.player.hp)}%` }} />
           </div>
           <strong>{battle.player.name}</strong>
@@ -152,14 +152,14 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
 
         <div className="fighter" data-fighter="enemy">
           <PlayingCard card={battle.enemy} size="medium" />
-          <div className="hp-frame enemy-hp" aria-label={`Enemy HP ${battle.enemyHp}`}>
+          <div className="hp-frame enemy-hp" aria-label={`상대 체력 ${battle.enemyHp}`}>
             <span style={{ width: `${hpPercent(battle.enemyHp, battle.enemy.hp)}%` }} />
           </div>
           <strong>{battle.enemy.name}</strong>
         </div>
       </div>
 
-      <div className="battle-actions">{screen === "ranked" && battle.status === "player-win" && <p>Victory reward +25</p>}</div>
+      <div className="battle-actions">{screen === "ranked" && battle.status === "player-win" && <p>승리 보상 +25</p>}</div>
     </section>
   );
 }

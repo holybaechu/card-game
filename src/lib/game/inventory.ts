@@ -86,6 +86,26 @@ export function mergeInventoryEntries(current: InventoryEntry[], next: Inventory
     .sort((a, b) => a.cardId - b.cardId);
 }
 
+export function mergeDrawnCardsIntoInventory(current: InventoryEntry[], drawnCards: GameCard[]) {
+  const quantities = new Map(current.map((entry) => [entry.cardId, entry.quantity]));
+
+  drawnCards.forEach((card) => {
+    quantities.set(card.id, (quantities.get(card.id) ?? 0) + 1);
+  });
+
+  return [...quantities.entries()]
+    .map(([cardId, quantity]) => ({ cardId, quantity }))
+    .sort((a, b) => a.cardId - b.cardId);
+}
+
+export function mergeLoadedInventory(current: InventoryEntry[], loaded: InventoryEntry[]) {
+  if (current.length === 0) {
+    return loaded;
+  }
+
+  return mergeInventoryEntries(loaded, current);
+}
+
 export function getInventoryQuantity(inventory: InventoryEntry[], cardId: number) {
   return inventory.find((entry) => entry.cardId === cardId)?.quantity ?? 0;
 }
