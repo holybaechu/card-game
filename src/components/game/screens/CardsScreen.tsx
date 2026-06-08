@@ -8,7 +8,6 @@ export function CardsScreen({ cards, inventory }: { cards: GameCard[]; inventory
       <div className="screen-heading">
         <p>카드</p>
         <h2>CARD COLLECTION</h2>
-        <span>Supabase 카드 데이터와 실제 제출 이미지</span>
       </div>
       <div className="card-grid">
         {cards.map((card) => (
