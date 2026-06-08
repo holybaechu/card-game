@@ -41,12 +41,13 @@ set
   score = excluded.score,
   updated_at = excluded.updated_at;
 
-insert into public.game_players (nickname, score)
-select 'Player', 1000
-where not exists (select 1 from public.game_players);
-
 alter table public.game_inventory
   add column if not exists player_id bigint;
+
+revoke all on public.game_inventory from public;
+revoke all on public.game_inventory from anon, authenticated;
+grant select on public.game_inventory to anon, authenticated;
+grant select, insert, update, delete on public.game_inventory to service_role;
 
 do $$
 begin
@@ -64,6 +65,15 @@ begin
   end if;
 end
 $$;
+
+insert into public.game_players (nickname, score)
+select 'Player', 1000
+where exists (
+  select 1
+  from public.game_inventory
+  where player_id is null
+)
+and not exists (select 1 from public.game_players);
 
 update public.game_inventory
 set player_id = (
@@ -107,6 +117,10 @@ on public.game_inventory(player_id, card_id);
 
 alter table public.game_matches
   add column if not exists player_id bigint;
+
+revoke all on public.game_matches from public;
+revoke all on public.game_matches from anon, authenticated;
+grant select, insert, update, delete on public.game_matches to service_role;
 
 do $$
 begin
