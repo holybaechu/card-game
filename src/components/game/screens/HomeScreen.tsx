@@ -1,46 +1,58 @@
 import { PlayingCard } from "@/components/game/PlayingCard";
 import { fallbackCards, type GameCard } from "@/lib/game/cards";
+import type { PlayerSession } from "@/lib/game/player";
 
-export function HomeScreen({
-  cards,
-  onOpenCards,
-  onOpenGacha,
-  onOpenRanking,
-  onStartBattle,
-}: {
+type HomeScreenProps = {
+  player: PlayerSession;
   cards: GameCard[];
   onOpenCards: () => void;
   onOpenGacha: () => void;
   onOpenRanking: () => void;
   onStartBattle: (mode: "normal" | "ranked") => void;
-}) {
+  onLogout: () => void;
+};
+
+export function HomeScreen({
+  player,
+  cards,
+  onOpenCards,
+  onOpenGacha,
+  onOpenRanking,
+  onStartBattle,
+  onLogout,
+}: HomeScreenProps) {
   return (
-    <section className="home-screen" aria-label="홈 화면">
+    <section className="home-screen" aria-label="Home">
       <div className="side-card left-card">
         <PlayingCard card={cards[15] ?? fallbackCards[0]} size="large" spinning />
       </div>
       <div className="home-center">
-        <p className="owner-name">배준후</p>
+        <p className="owner-name">
+          {player.nickname} · {player.score}
+        </p>
         <h1 className="game-title">
           CARD
           <br />
           GAME
         </h1>
-        <nav className="home-menu" aria-label="게임 메뉴">
+        <button className="neon-button compact home-logout-button" onClick={onLogout} type="button">
+          Logout
+        </button>
+        <nav className="home-menu" aria-label="Main game menu">
           <button className="neon-button" onClick={() => onStartBattle("normal")} type="button">
-            일반전
+            Normal
           </button>
           <button className="neon-button" onClick={() => onStartBattle("ranked")} type="button">
-            랭크전
+            Ranked
           </button>
           <button className="neon-button" onClick={onOpenCards} type="button">
-            카드
+            Cards
           </button>
           <button className="neon-button" onClick={onOpenRanking} type="button">
-            순위
+            Ranking
           </button>
           <button className="neon-button gacha-home-button" onClick={onOpenGacha} type="button">
-            가챠
+            Gacha
           </button>
         </nav>
       </div>
@@ -50,3 +62,4 @@ export function HomeScreen({
     </section>
   );
 }
+

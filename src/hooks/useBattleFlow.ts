@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { createBattle, updatePlayerScore, type BattleState, type BattleStatus } from "@/lib/game/battle";
+import { createBattle, type BattleState, type BattleStatus } from "@/lib/game/battle";
 import { recordMatchResult, type RankingEntry } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
+import type { PlayerSession } from "@/lib/game/player";
 
 export type GameScreen = "home" | "normal" | "ranked" | "cards" | "ranking" | "gacha" | "matching";
 type BattleMode = "normal" | "ranked";
@@ -13,17 +14,21 @@ export function useBattleFlow({
   battle,
   cards,
   rankings,
+  player,
   screen,
   setBattle,
   setRankings,
+  setPlayer,
   setScreen,
 }: {
   battle: BattleState;
   cards: GameCard[];
   rankings: RankingEntry[];
+  player: PlayerSession | null;
   screen: GameScreen;
   setBattle: Dispatch<SetStateAction<BattleState>>;
   setRankings: Dispatch<SetStateAction<RankingEntry[]>>;
+  setPlayer: Dispatch<SetStateAction<PlayerSession | null>>;
   setScreen: Dispatch<SetStateAction<GameScreen>>;
 }) {
   const [pendingBattle, setPendingBattle] = useState<BattleMode | null>(null);
@@ -83,7 +88,7 @@ export function useBattleFlow({
   }, [battle.status, screen, setBattle]);
 
   useEffect(() => {
-    if ((screen !== "normal" && screen !== "ranked") || battle.status === "running") {
+    if (!player || (screen !== "normal" && screen !== "ranked") || battle.status === "running") {
       return;
     }
 
@@ -96,27 +101,34 @@ export function useBattleFlow({
 
     void recordMatchResult({
       match: {
+        nickname: player.nickname,
         mode: screen,
         playerCardId: battle.player.id,
         enemyCardId: battle.enemy.id,
       },
     }).then((result) => {
-      if (result.persisted && result.match && result.match.scoreDelta > 0) {
-        setRankings((current) => updatePlayerScore(current, result.match?.scoreDelta ?? 0));
+      if (!result.persisted) {
+        return;
+      }
+
+      if (result.player) {
+        setPlayer(result.player);
+      }
+
+      if (result.rankings.length > 0) {
+        setRankings(result.rankings);
       }
     });
-  }, [battle.enemy.id, battle.player.id, battle.status, battle.tick, screen, setRankings]);
+  }, [battle.enemy.id, battle.player.id, battle.status, battle.tick, player, screen, setPlayer, setRankings]);
 
-  const rankedScore = rankings.find((entry) => entry.isPlayer)?.score ?? 1000;
-  const rankedRows = useMemo(
-    () =>
-      [...rankings]
-        .sort((a, b) => b.score - a.score)
-        .map((entry, index) => ({ ...entry, place: index + 1 })),
-    [rankings],
-  );
+  const rankedScore = rankings.find((entry) => entry.isActivePlayer)?.score ?? 1000;
+  const rankedRows = useMemo(() => [...rankings].sort((a, b) => a.place - b.place), [rankings]);
 
   function startBattle(nextScreen: BattleMode) {
+    if (!player) {
+      return;
+    }
+
     setPendingBattle(nextScreen);
     setMatchingCountdown(3);
     setScreen("matching");

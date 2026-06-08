@@ -6,8 +6,9 @@ import { createBattle, type BattleState } from "@/lib/game/battle";
 import { fallbackCards, type GameCard } from "@/lib/game/cards";
 import { fallbackRankings, getInitialGameData, type RankingEntry } from "@/lib/game/backend";
 import type { InventoryEntry } from "@/lib/game/inventory";
+import type { PlayerSession } from "@/lib/game/player";
 
-export function useGameData() {
+export function useGameData(player: PlayerSession | null) {
   const [cards, setCards] = useState<GameCard[]>(fallbackCards);
   const [rankings, setRankings] = useState<RankingEntry[]>(fallbackRankings);
   const [inventory, setInventory] = useState<InventoryEntry[]>([]);
@@ -15,8 +16,15 @@ export function useGameData() {
 
   useEffect(() => {
     let active = true;
+    if (!player) {
+      setCards(fallbackCards);
+      setRankings(fallbackRankings);
+      setInventory([]);
+      setBattle(createBattle(fallbackCards));
+      return;
+    }
 
-    getInitialGameData().then((data) => {
+    getInitialGameData({ player }).then((data) => {
       if (!active) {
         return;
       }
@@ -30,7 +38,7 @@ export function useGameData() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [player]);
 
   return {
     battle,

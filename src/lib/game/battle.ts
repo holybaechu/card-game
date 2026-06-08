@@ -36,5 +36,5 @@ export function hpPercent(value: number, max: number) {
 }
 
 export function updatePlayerScore(rankings: RankingEntry[], delta: number) {
-  return rankings.map((entry) => (entry.isPlayer ? { ...entry, score: Math.max(0, entry.score + delta) } : entry));
+  return rankings.map((entry) => (entry.isActivePlayer ? { ...entry, score: Math.max(0, entry.score + delta) } : entry));
 }

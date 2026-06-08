@@ -1130,3 +1130,71 @@ button {
     font-size: 13px;
   }
 }
+
+.login-screen {
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-panel {
+  width: min(360px, 100%);
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.login-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 34px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+}
+
+.login-subtitle {
+  margin: 0;
+  color: #ffe08a;
+  font-weight: 700;
+  text-align: center;
+}
+
+.login-error {
+  margin: 0;
+  color: #ffb4b4;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
+
+.login-field input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.login-button {
+  width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
