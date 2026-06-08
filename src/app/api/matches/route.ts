@@ -1,7 +1,13 @@
 import { persistMatchResult } from "@/lib/game/server-backend";
 import { parseMatchRequestInput, type MatchRequestInput, type PersistableMatchResult } from "@/lib/game/matches";
+import type { PlayerSession, RankingEntry } from "@/lib/game/player";
 
-type PersistMatch = (match: MatchRequestInput) => Promise<{ persisted: boolean; match: PersistableMatchResult | null }>;
+type PersistMatch = (match: MatchRequestInput) => Promise<{
+  persisted: boolean;
+  match: PersistableMatchResult | null;
+  player: PlayerSession | null;
+  rankings: RankingEntry[];
+}>;
 
 export async function handleMatchPost(request: Request, persist: PersistMatch = (match) => persistMatchResult({ match })) {
   try {
@@ -9,10 +15,16 @@ export async function handleMatchPost(request: Request, persist: PersistMatch = 
     const result = await persist(match);
 
     if (!result.match) {
-      return Response.json({ persisted: false }, { status: 503 });
+      return Response.json(
+        { persisted: false, player: result.player ?? null, rankings: result.rankings ?? [] },
+        { status: 503 },
+      );
     }
 
-    return Response.json({ persisted: result.persisted, ...result.match }, { status: 200 });
+    return Response.json(
+      { persisted: result.persisted, ...result.match, player: result.player ?? null, rankings: result.rankings ?? [] },
+      { status: 200 },
+    );
   } catch {
     return Response.json({ persisted: false }, { status: 400 });
   }

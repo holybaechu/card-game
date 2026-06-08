@@ -1,18 +1,12 @@
-type RankedRow = {
-  id: number;
-  nickname: string;
-  score: number;
-  place: number;
-  isActivePlayer: boolean;
-};
+import type { RankingEntry } from "@/lib/game/backend";
 
-export function RankingScreen({ rankedRows }: { rankedRows: RankedRow[] }) {
+export function RankingScreen({ rankedRows }: { rankedRows: RankingEntry[] }) {
   return (
-    <section className="ranking-screen" aria-label="순위">
+    <section className="ranking-screen" aria-label="Ranking">
       <div className="screen-heading">
-        <p>순위</p>
+        <p>Ranking</p>
         <h2>RANKING</h2>
-        <span>랭크전 승리 점수 반영</span>
+        <span>Top scores</span>
       </div>
       <ol className="ranking-list">
         {rankedRows.map((entry) => (
@@ -26,3 +20,4 @@ export function RankingScreen({ rankedRows }: { rankedRows: RankedRow[] }) {
     </section>
   );
 }
+

@@ -1,61 +1,56 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import {
-  getFallbackRankings,
-  getInitialGameData,
-  getPlayerSession,
-  recordInventoryDraw,
-  recordMatchResult,
-} from "./backend";
+import { getInitialGameData, getPlayerSession, recordInventoryDraw, recordMatchResult } from "./backend";
 import { fallbackCards } from "./cards";
-
-describe("getPlayerSession", () => {
-  it("posts a nickname and maps a player session", async () => {
-    let postedBody: unknown;
-    const result = await getPlayerSession({
-      fetcher: async (_url, init) => {
-        postedBody = JSON.parse(String(init?.body));
-        return Response.json({ id: 42, nickname: "junhu", score: 750 });
-      },
-      nickname: "junhu",
-    });
-
-    assert.deepEqual(result, { id: 42, nickname: "junhu", score: 750 });
-    assert.deepEqual(postedBody, { nickname: "junhu" });
-  });
-
-  it("returns null on non-ok response", async () => {
-    const result = await getPlayerSession({
-      fetcher: async () => Response.json({ id: 42 }, { status: 503 }),
-      nickname: "junhu",
-    });
-
-    assert.equal(result, null);
-  });
-
-  it("returns null when session request throws", async () => {
-    const result = await getPlayerSession({
-      fetcher: async () => {
-        throw new Error("network error");
-      },
-      nickname: "junhu",
-    });
-
-    assert.equal(result, null);
-  });
-});
+import { sortRankingRows, type PlayerSession } from "./player";
 
 describe("getInitialGameData", () => {
   it("returns fallback cards, rankings, and empty inventory when Supabase env vars are missing", async () => {
-    const player = { id: 99, nickname: "junhu", score: 1000 };
+    const player: PlayerSession = { id: 99, nickname: "junhu", score: 420 };
     const data = await getInitialGameData({ env: {}, player });
-    const expectedFallback = getFallbackRankings(player);
 
     assert.equal(data.cards.length, fallbackCards.length);
     assert.equal(data.cards[0]?.imagePath, "/cards/001-gemini-5wa9.png");
-    assert.deepEqual(data.rankings, expectedFallback);
+    assert.deepEqual(data.rankings, sortRankingRows([player], player.id));
     assert.deepEqual(data.inventory, []);
+  });
+});
+
+describe("getPlayerSession", () => {
+  it("posts nickname and maps player response", async () => {
+    let postedBody: unknown;
+
+    const result = await getPlayerSession({
+      fetcher: async (_url, init) => {
+        postedBody = JSON.parse(String(init?.body));
+        return Response.json({ id: 17, nickname: "junhu", score: 900 });
+      },
+      nickname: "junhu",
+    });
+
+    assert.deepEqual(result, { id: 17, nickname: "junhu", score: 900 });
+    assert.deepEqual(postedBody, { nickname: "junhu" });
+  });
+
+  it("returns null when player session persistence is unavailable", async () => {
+    const result = await getPlayerSession({
+      fetcher: async () => Response.json({ player: null }, { status: 503 }),
+      nickname: "junhu",
+    });
+
+    assert.equal(result, null);
+  });
+
+  it("returns null when fetch throws", async () => {
+    const result = await getPlayerSession({
+      fetcher: async () => {
+        throw new Error("network down");
+      },
+      nickname: "junhu",
+    });
+
+    assert.equal(result, null);
   });
 });
 
@@ -70,7 +65,7 @@ describe("recordInventoryDraw", () => {
           persisted: true,
           drawnCards: [fallbackCards[0]],
           inventory: [{ cardId: 1, quantity: 2 }],
-          player: { id: 42, nickname: "junhu", score: 1000 },
+          player: { id: 7, nickname: "junhu", score: 250 },
         });
       },
       draw: { nickname: "junhu", count: 10 },
@@ -80,7 +75,7 @@ describe("recordInventoryDraw", () => {
       persisted: true,
       drawnCards: [fallbackCards[0]],
       inventory: [{ cardId: 1, quantity: 2 }],
-      player: { id: 42, nickname: "junhu", score: 1000 },
+      player: { id: 7, nickname: "junhu", score: 250 },
     });
     assert.deepEqual(postedBody, { nickname: "junhu", count: 10 });
   });
@@ -93,6 +88,28 @@ describe("recordInventoryDraw", () => {
 
     assert.deepEqual(result, { persisted: false, drawnCards: [], inventory: [], player: null });
   });
+
+  it("filters malformed inventory entries returned from draw API", async () => {
+    const result = await recordInventoryDraw({
+      fetcher: async () =>
+        Response.json({
+          persisted: true,
+          drawnCards: [],
+          inventory: [
+            { cardId: 1, quantity: 2 },
+            { cardId: "bad", quantity: 3 },
+            { card_id: 5, quantity: 1 },
+            { cardId: 2 },
+          ],
+        }),
+      draw: { nickname: "junhu", count: 1 },
+    });
+
+    assert.deepEqual(result.inventory, [
+      { cardId: 1, quantity: 2 },
+      { cardId: 5, quantity: 1 },
+    ]);
+  });
 });
 
 describe("recordMatchResult", () => {
@@ -100,61 +117,89 @@ describe("recordMatchResult", () => {
     let postedBody: unknown;
 
     const result = await recordMatchResult({
-      player: { id: 10, nickname: "junhu", score: 1000 },
       fetcher: async (_url, init) => {
         postedBody = JSON.parse(String(init?.body));
         return Response.json({
           persisted: true,
+          player: { id: 12, nickname: "junhu", score: 1000 },
           mode: "ranked",
+          nickname: "junhu",
           playerCardId: 1,
           enemyCardId: 2,
+          rankings: [{ id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true }],
           result: "player-win",
           scoreDelta: 25,
-          player: { id: 99, nickname: "junhu", score: 1025 },
-          rankings: [
-            { id: 99, nickname: "junhu", score: 1025 },
-            { id: 1, nickname: "NeonMaster", score: 1360 },
-          ],
         });
       },
       match: {
+        nickname: "junhu",
         mode: "ranked",
         playerCardId: 1,
         enemyCardId: 2,
-        nickname: "junhu",
       },
     });
 
     assert.deepEqual(result, {
       persisted: true,
-      player: { id: 99, nickname: "junhu", score: 1025 },
+      player: { id: 12, nickname: "junhu", score: 1000 },
       match: {
+        nickname: "junhu",
         mode: "ranked",
         playerCardId: 1,
         enemyCardId: 2,
         result: "player-win",
         scoreDelta: 25,
       },
-      rankings: [
-        { name: "NeonMaster", score: 1360, isPlayer: false },
-        { name: "junhu", score: 1025, isPlayer: true },
-      ],
+      rankings: [{ id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true }],
     });
-    assert.deepEqual(postedBody, { mode: "ranked", playerCardId: 1, enemyCardId: 2, nickname: "junhu" });
+    assert.deepEqual(postedBody, {
+      nickname: "junhu",
+      mode: "ranked",
+      playerCardId: 1,
+      enemyCardId: 2,
+    });
   });
 
   it("returns false when server persistence is unavailable", async () => {
     const result = await recordMatchResult({
-      player: { id: 10, nickname: "junhu", score: 1000 },
       fetcher: async () => Response.json({ persisted: false }, { status: 503 }),
       match: {
+        nickname: "junhu",
         mode: "ranked",
         playerCardId: 1,
         enemyCardId: 2,
-        nickname: "junhu",
       },
     });
 
     assert.deepEqual(result, { persisted: false, match: null, player: null, rankings: [] });
+  });
+
+  it("filters malformed ranking entries returned from match API", async () => {
+    const result = await recordMatchResult({
+      fetcher: async () =>
+        Response.json({
+          persisted: true,
+          player: { id: 12, nickname: "junhu", score: 1000 },
+          mode: "ranked",
+          nickname: "junhu",
+          playerCardId: 1,
+          enemyCardId: 2,
+          scoreDelta: 25,
+          result: "player-win",
+          rankings: [
+            { id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true },
+            { id: "bad", nickname: "Bad", score: 100, place: 2, isActivePlayer: false },
+            { id: 14, score: 90, place: "three", isActivePlayer: true },
+          ],
+        }),
+      match: {
+        nickname: "junhu",
+        mode: "ranked",
+        playerCardId: 1,
+        enemyCardId: 2,
+      },
+    });
+
+    assert.deepEqual(result.rankings, [{ id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true }]);
   });
 });

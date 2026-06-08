@@ -4,9 +4,9 @@ import { getInventoryQuantity, type InventoryEntry } from "@/lib/game/inventory"
 
 export function CardsScreen({ cards, inventory }: { cards: GameCard[]; inventory: InventoryEntry[] }) {
   return (
-    <section className="collection-screen" aria-label="카드 도감">
+    <section className="collection-screen" aria-label="Card collection">
       <div className="screen-heading">
-        <p>카드</p>
+        <p>Cards</p>
         <h2>CARD COLLECTION</h2>
       </div>
       <div className="card-grid">

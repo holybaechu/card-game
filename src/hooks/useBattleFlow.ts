@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 
-import { createBattle, updatePlayerScore, type BattleState, type BattleStatus } from "@/lib/game/battle";
+import { createBattle, type BattleState, type BattleStatus } from "@/lib/game/battle";
 import { recordMatchResult, type RankingEntry } from "@/lib/game/backend";
-import type { PlayerSession } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
+import type { PlayerSession } from "@/lib/game/player";
 
 export type GameScreen = "home" | "normal" | "ranked" | "cards" | "ranking" | "gacha" | "matching";
 type BattleMode = "normal" | "ranked";
@@ -14,8 +14,8 @@ export function useBattleFlow({
   battle,
   cards,
   rankings,
-  screen,
   player,
+  screen,
   setBattle,
   setRankings,
   setPlayer,
@@ -24,8 +24,8 @@ export function useBattleFlow({
   battle: BattleState;
   cards: GameCard[];
   rankings: RankingEntry[];
-  screen: GameScreen;
   player: PlayerSession | null;
+  screen: GameScreen;
   setBattle: Dispatch<SetStateAction<BattleState>>;
   setRankings: Dispatch<SetStateAction<RankingEntry[]>>;
   setPlayer: Dispatch<SetStateAction<PlayerSession | null>>;
@@ -88,11 +88,7 @@ export function useBattleFlow({
   }, [battle.status, screen, setBattle]);
 
   useEffect(() => {
-    if ((screen !== "normal" && screen !== "ranked") || battle.status === "running") {
-      return;
-    }
-
-    if (!player) {
+    if (!player || (screen !== "normal" && screen !== "ranked") || battle.status === "running") {
       return;
     }
 
@@ -104,12 +100,11 @@ export function useBattleFlow({
     recordedMatches.current.add(matchKey);
 
     void recordMatchResult({
-      player,
       match: {
+        nickname: player.nickname,
         mode: screen,
         playerCardId: battle.player.id,
         enemyCardId: battle.enemy.id,
-        nickname: player.nickname,
       },
     }).then((result) => {
       if (!result.persisted) {
@@ -122,30 +117,12 @@ export function useBattleFlow({
 
       if (result.rankings.length > 0) {
         setRankings(result.rankings);
-        return;
-      }
-
-      if (result.match && result.match.scoreDelta > 0) {
-        setRankings((current) => updatePlayerScore(current, result.match?.scoreDelta ?? 0));
       }
     });
   }, [battle.enemy.id, battle.player.id, battle.status, battle.tick, player, screen, setPlayer, setRankings]);
 
-  const rankedRows = useMemo(() => {
-    type RankingLike = RankingEntry & { id?: number; nickname?: string; isActivePlayer?: boolean };
-    const sorted = [...rankings].sort((a, b) => b.score - a.score);
-    return sorted.map((entry, index) => ({
-      id: (entry as RankingLike).id ?? index + 1_000_000,
-      nickname: (entry as RankingLike).nickname ?? entry.name,
-      score: entry.score,
-      isActivePlayer: player
-        ? (entry as RankingLike).id === player.id || (entry as RankingLike).isActivePlayer || entry.isPlayer
-        : (entry as RankingLike).isActivePlayer || entry.isPlayer,
-      place: index + 1,
-    }));
-  }, [player, rankings]);
-
-  const rankedScore = player?.score ?? rankedRows.find((entry) => entry.isActivePlayer)?.score ?? 1000;
+  const rankedScore = rankings.find((entry) => entry.isActivePlayer)?.score ?? 1000;
+  const rankedRows = useMemo(() => [...rankings].sort((a, b) => a.place - b.place), [rankings]);
 
   function startBattle(nextScreen: BattleMode) {
     if (!player) {

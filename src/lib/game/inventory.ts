@@ -1,4 +1,5 @@
 import type { GameCard } from "./cards";
+import { parseNickname } from "./player";
 
 export type InventoryEntry = {
   cardId: number;
@@ -11,6 +12,7 @@ export type InventoryRow = {
 };
 
 export type InventoryDrawInput = {
+  nickname: string;
   count: 1 | 10 | 100;
 };
 
@@ -36,16 +38,32 @@ export function mapInventoryRow(row: InventoryRow): InventoryEntry {
 }
 
 export function parseDrawInventoryInput(input: unknown): InventoryDrawInput {
-  if (!input || typeof input !== "object" || !("count" in input)) {
+  if (!input || typeof input !== "object") {
+    throw new Error("Draw payload requires an object payload");
+  }
+
+  const value = input as { nickname?: unknown; count?: unknown } & Record<string, unknown>;
+
+  if (!("nickname" in value)) {
+    throw new Error("Draw payload requires a valid nickname");
+  }
+
+  const nickname = parseNickname(value.nickname);
+
+  if ("cardIds" in value) {
+    throw new Error("Draw payload card ids are server controlled");
+  }
+
+  if (!("count" in value)) {
     throw new Error("Draw payload requires a valid count");
   }
 
-  const count = (input as { count: unknown }).count;
+  const count = value.count;
   if (typeof count !== "number" || !Number.isInteger(count) || !allowedDrawCounts.has(count)) {
     throw new Error("Draw payload requires a valid count");
   }
 
-  return { count: count as InventoryDrawInput["count"] };
+  return { nickname, count: count as InventoryDrawInput["count"] };
 }
 
 export function drawRandomCards(cards: GameCard[], count: InventoryDrawInput["count"], random: () => number = Math.random) {

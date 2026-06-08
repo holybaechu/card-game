@@ -6,34 +6,34 @@ import { BattleScreen } from "@/components/game/screens/BattleScreen";
 import { CardsScreen } from "@/components/game/screens/CardsScreen";
 import { GachaScreen } from "@/components/game/screens/GachaScreen";
 import { HomeScreen } from "@/components/game/screens/HomeScreen";
+import { LoginScreen } from "@/components/game/screens/LoginScreen";
 import { MatchingScreen } from "@/components/game/screens/MatchingScreen";
 import { RankingScreen } from "@/components/game/screens/RankingScreen";
-import { LoginScreen } from "@/components/game/screens/LoginScreen";
 import { Sparkles } from "@/components/game/Sparkles";
+import { getPlayerSession } from "@/lib/game/backend";
+import type { PlayerSession } from "@/lib/game/player";
 import { useBattleFlow, type GameScreen } from "@/hooks/useBattleFlow";
 import { useGachaFlow } from "@/hooks/useGachaFlow";
 import { useGameData } from "@/hooks/useGameData";
-import { getPlayerSession } from "@/lib/game/backend";
-import type { PlayerSession } from "@/lib/game/backend";
 
-const nicknameStorageKey = "cg:nickname";
+const NICKNAME_STORAGE_KEY = "cg:nickname";
 
 export default function Home() {
   const [screen, setScreen] = useState<GameScreen>("home");
   const [player, setPlayer] = useState<PlayerSession | null>(null);
-  const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const { battle, cards, inventory, rankings, setBattle, setInventory, setRankings } = useGameData({ player });
+  const { battle, cards, inventory, rankings, setBattle, setInventory, setRankings } = useGameData(player);
   const { cancelPendingBattle, matchingCountdown, pendingBattle, rankedRows, rankedScore, startBattle } = useBattleFlow({
     battle,
     cards,
+    player,
     rankings,
     screen,
-    player,
     setBattle,
-    setRankings,
     setPlayer,
+    setRankings,
     setScreen,
   });
   const { gachaCards, gachaCount, isDrawing, openGacha, startGacha } = useGachaFlow({
@@ -44,65 +44,68 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (typeof window === "undefined" || player) {
-      return;
-    }
-
-    const savedNickname = window.localStorage.getItem(nicknameStorageKey);
-    if (!savedNickname) {
-      return;
-    }
-
-    setIsLoginLoading(true);
-    void getPlayerSession({ nickname: savedNickname }).then((session) => {
-      if (session) {
-        setPlayer(session);
-        setLoginError(null);
-      } else {
-        window.localStorage.removeItem(nicknameStorageKey);
-      }
-    }).finally(() => {
-      setIsLoginLoading(false);
-    });
-  }, [player]);
-
-  function handleLoginSubmit(nickname: string) {
-    setIsLoginLoading(true);
-    setLoginError(null);
-
-    void getPlayerSession({ nickname }).then((session) => {
-      if (!session) {
-        setLoginError("닉네임 조회에 실패했습니다.");
+    let isActive = true;
+    const attemptAutoLogin = async () => {
+      const savedNickname = window.localStorage.getItem(NICKNAME_STORAGE_KEY);
+      if (!savedNickname) {
         return;
       }
 
-      setPlayer(session);
-      setLoginError(null);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(nicknameStorageKey, session.nickname);
+      await Promise.resolve();
+      if (!isActive) {
+        return;
       }
-      setScreen("home");
-    }).finally(() => {
-      setIsLoginLoading(false);
+
+      setIsLoggingIn(true);
+      setLoginError(null);
+
+      const nextPlayer = await getPlayerSession({ nickname: savedNickname });
+      if (!isActive) {
+        return;
+      }
+
+      if (nextPlayer) {
+        setPlayer(nextPlayer);
+      } else {
+        setLoginError("Auto-login failed.");
+        window.localStorage.removeItem(NICKNAME_STORAGE_KEY);
+      }
+      setIsLoggingIn(false);
+    };
+
+    void attemptAutoLogin();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  function handleLoginSubmit(nickname: string) {
+    const trimmedNickname = nickname.trim();
+    if (!trimmedNickname) {
+      setLoginError("Please enter a nickname.");
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setLoginError(null);
+
+    void getPlayerSession({ nickname: trimmedNickname }).then((nextPlayer) => {
+      if (nextPlayer) {
+        setPlayer(nextPlayer);
+        window.localStorage.setItem(NICKNAME_STORAGE_KEY, nextPlayer.nickname);
+      } else {
+        setLoginError("Unable to login.");
+      }
+
+      setIsLoggingIn(false);
     });
   }
 
   function handleLogout() {
     setPlayer(null);
-    setLoginError(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(nicknameStorageKey);
-    }
     setScreen("home");
-  }
-
-  if (!player) {
-    return (
-      <main className="game-shell">
-        <Sparkles />
-        <LoginScreen error={loginError} isLoading={isLoginLoading} onSubmit={handleLoginSubmit} />
-      </main>
-    );
+    window.localStorage.removeItem(NICKNAME_STORAGE_KEY);
   }
 
   function goHome() {
@@ -110,24 +113,33 @@ export default function Home() {
     setScreen("home");
   }
 
+  if (!player) {
+    return (
+      <main className="game-shell">
+        <Sparkles />
+        <LoginScreen error={loginError} isLoading={isLoggingIn} onSubmit={handleLoginSubmit} />
+      </main>
+    );
+  }
+
   return (
     <main className="game-shell">
       <Sparkles />
       {screen !== "home" && (
         <button className="back-button" onClick={goHome} type="button">
-          뒤로
+          Back
         </button>
       )}
 
       {screen === "home" && (
         <HomeScreen
-          cards={cards}
           player={player}
-          onLogout={handleLogout}
+          cards={cards}
           onOpenCards={() => setScreen("cards")}
           onOpenGacha={openGacha}
           onOpenRanking={() => setScreen("ranking")}
           onStartBattle={startBattle}
+          onLogout={handleLogout}
         />
       )}
 
@@ -137,7 +149,9 @@ export default function Home() {
 
       {screen === "cards" && <CardsScreen cards={cards} inventory={inventory} />}
 
-      {screen === "gacha" && <GachaScreen gachaCards={gachaCards} gachaCount={gachaCount} isDrawing={isDrawing} onStartGacha={startGacha} />}
+      {screen === "gacha" && (
+        <GachaScreen gachaCards={gachaCards} gachaCount={gachaCount} isDrawing={isDrawing} onStartGacha={startGacha} />
+      )}
 
       {screen === "ranking" && <RankingScreen rankedRows={rankedRows} />}
     </main>

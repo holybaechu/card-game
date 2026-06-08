@@ -26,6 +26,18 @@ export function gachaAnimationLayout(count: InventoryDrawInput["count"]) {
   };
 }
 
+export function gachaRevealTiming(count: InventoryDrawInput["count"]) {
+  if (count === 1) {
+    return { intervalMs: 650, effectSeconds: 1.25 };
+  }
+
+  if (count === 10) {
+    return { intervalMs: 260, effectSeconds: 1.05 };
+  }
+
+  return { intervalMs: 45, effectSeconds: 0.72 };
+}
+
 export function battleAnimationForTick(tick: number): { attacker: BattleSide; defender: BattleSide; effect: BattleEffect } | null {
   if (tick <= 0) {
     return null;

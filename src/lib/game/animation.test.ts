@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { battleAnimationForTick, gachaAnimationLayout } from "./animation";
+import { battleAnimationForTick, gachaAnimationLayout, gachaRevealTiming } from "./animation";
 
 describe("gachaAnimationLayout", () => {
   it("centers a single draw as a large showcase card", () => {
@@ -20,6 +20,14 @@ describe("gachaAnimationLayout", () => {
       gridClass: "gacha-grid gacha-grid-large",
       cardClass: "gacha-card-pop gacha-size-small",
     });
+  });
+});
+
+describe("gachaRevealTiming", () => {
+  it("maps draw counts to reveal cadence and effect duration", () => {
+    assert.deepEqual(gachaRevealTiming(1), { intervalMs: 650, effectSeconds: 1.25 });
+    assert.deepEqual(gachaRevealTiming(10), { intervalMs: 260, effectSeconds: 1.05 });
+    assert.deepEqual(gachaRevealTiming(100), { intervalMs: 45, effectSeconds: 0.72 });
   });
 });
 

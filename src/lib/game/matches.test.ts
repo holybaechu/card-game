@@ -6,12 +6,14 @@ import { createServerMatchResult, getRankedScoreDelta, parseMatchRequestInput } 
 describe("parseMatchRequestInput", () => {
   it("accepts a valid match request without a caller-controlled result", () => {
     const match = parseMatchRequestInput({
+      nickname: "  p1  ",
       mode: "ranked",
       playerCardId: 1,
       enemyCardId: 2,
     });
 
     assert.deepEqual(match, {
+      nickname: "p1",
       mode: "ranked",
       playerCardId: 1,
       enemyCardId: 2,
@@ -22,6 +24,7 @@ describe("parseMatchRequestInput", () => {
     assert.throws(
       () =>
         parseMatchRequestInput({
+          nickname: "p1",
           mode: "ranked",
           playerCardId: 1,
           enemyCardId: 2,
@@ -35,6 +38,7 @@ describe("parseMatchRequestInput", () => {
     assert.throws(
       () =>
         parseMatchRequestInput({
+          nickname: "p1",
           mode: "ranked",
           playerCardId: 1,
           enemyCardId: 2,
@@ -48,6 +52,7 @@ describe("parseMatchRequestInput", () => {
     assert.throws(
       () =>
         parseMatchRequestInput({
+          nickname: "p1",
           mode: "normal",
           playerCardId: 0,
           enemyCardId: 2,
@@ -55,12 +60,50 @@ describe("parseMatchRequestInput", () => {
       /card id/i,
     );
   });
+
+  it("rejects duplicate card ids", () => {
+    assert.throws(
+      () =>
+        parseMatchRequestInput({
+          nickname: "p1",
+          mode: "normal",
+          playerCardId: 2,
+          enemyCardId: 2,
+        }),
+      /different card ids/i,
+    );
+  });
+
+  it("rejects invalid modes", () => {
+    assert.throws(
+      () =>
+        parseMatchRequestInput({
+          nickname: "p1",
+          mode: "practice",
+          playerCardId: 1,
+          enemyCardId: 2,
+        }),
+      /mode/i,
+    );
+  });
+
+  it("rejects missing nicknames", () => {
+    assert.throws(
+      () =>
+        parseMatchRequestInput({
+          mode: "normal",
+          playerCardId: 1,
+          enemyCardId: 2,
+        }),
+      /nickname/i,
+    );
+  });
 });
 
 describe("createServerMatchResult", () => {
   it("derives the match result and ranked score delta from server-owned card stats", () => {
     const match = createServerMatchResult(
-      { mode: "ranked", playerCardId: 1, enemyCardId: 2 },
+      { nickname: "p1", mode: "ranked", playerCardId: 1, enemyCardId: 2 },
       [
         { id: 1, name: "Strong", rank: "SSR", attack: 30, hp: 120, imagePath: "/cards/1.png", sortOrder: 1 },
         { id: 2, name: "Weak", rank: "R", attack: 10, hp: 100, imagePath: "/cards/2.png", sortOrder: 2 },
@@ -68,6 +111,7 @@ describe("createServerMatchResult", () => {
     );
 
     assert.deepEqual(match, {
+      nickname: "p1",
       mode: "ranked",
       playerCardId: 1,
       enemyCardId: 2,
@@ -79,7 +123,7 @@ describe("createServerMatchResult", () => {
   it("rejects match requests for missing cards", () => {
     assert.throws(
       () =>
-        createServerMatchResult({ mode: "normal", playerCardId: 1, enemyCardId: 99 }, [
+        createServerMatchResult({ nickname: "p1", mode: "normal", playerCardId: 1, enemyCardId: 99 }, [
           { id: 1, name: "Only", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 },
         ]),
       /known cards/i,

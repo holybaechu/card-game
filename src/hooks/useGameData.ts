@@ -4,23 +4,19 @@ import { useEffect, useState } from "react";
 
 import { createBattle, type BattleState } from "@/lib/game/battle";
 import { fallbackCards, type GameCard } from "@/lib/game/cards";
-import { getInitialGameData, type PlayerSession, type RankingEntry } from "@/lib/game/backend";
+import { fallbackRankings, getInitialGameData, type RankingEntry } from "@/lib/game/backend";
 import type { InventoryEntry } from "@/lib/game/inventory";
+import type { PlayerSession } from "@/lib/game/player";
 
-export function useGameData({ player }: { player: PlayerSession | null }) {
+export function useGameData(player: PlayerSession | null) {
   const [cards, setCards] = useState<GameCard[]>(fallbackCards);
-  const [rankings, setRankings] = useState<RankingEntry[]>([]);
+  const [rankings, setRankings] = useState<RankingEntry[]>(fallbackRankings);
   const [inventory, setInventory] = useState<InventoryEntry[]>([]);
   const [battle, setBattle] = useState<BattleState>(() => createBattle(fallbackCards));
 
   useEffect(() => {
     let active = true;
-
     if (!player) {
-      setCards(fallbackCards);
-      setRankings([]);
-      setInventory([]);
-      setBattle(createBattle(fallbackCards));
       return;
     }
 
@@ -33,11 +29,6 @@ export function useGameData({ player }: { player: PlayerSession | null }) {
       setRankings(data.rankings);
       setInventory(data.inventory);
       setBattle(createBattle(data.cards));
-    }).catch(() => {
-      setCards(fallbackCards);
-      setRankings([]);
-      setInventory([]);
-      setBattle(createBattle(fallbackCards));
     });
 
     return () => {
@@ -46,10 +37,10 @@ export function useGameData({ player }: { player: PlayerSession | null }) {
   }, [player]);
 
   return {
-    battle,
-    cards,
-    inventory,
-    rankings,
+    battle: player ? battle : createBattle(fallbackCards),
+    cards: player ? cards : fallbackCards,
+    inventory: player ? inventory : [],
+    rankings: player ? rankings : fallbackRankings,
     setBattle,
     setInventory,
     setRankings,

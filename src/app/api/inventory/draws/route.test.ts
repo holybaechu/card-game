@@ -5,14 +5,14 @@ import { handleInventoryDrawPost } from "./route";
 
 describe("handleInventoryDrawPost", () => {
   it("persists a validated draw count", async () => {
-    let persistedCount: unknown;
+    let persistedRequest: unknown;
     const response = await handleInventoryDrawPost(
       new Request("http://localhost/api/inventory/draws", {
         method: "POST",
-        body: JSON.stringify({ count: 10 }),
+        body: JSON.stringify({ nickname: "junhu", count: 10 }),
       }),
       async (draw) => {
-        persistedCount = draw.count;
+        persistedRequest = draw;
         return {
           persisted: true,
           drawnCards: [
@@ -20,6 +20,7 @@ describe("handleInventoryDrawPost", () => {
             { id: 2, name: "Two", rank: "SR", attack: 20, hp: 100, imagePath: "/cards/2.png", sortOrder: 2 },
           ],
           inventory: [{ cardId: 1, quantity: 1 }, { cardId: 2, quantity: 1 }],
+          player: { id: 7, nickname: "junhu", score: 1000 },
         };
       },
     );
@@ -32,8 +33,9 @@ describe("handleInventoryDrawPost", () => {
         { id: 2, name: "Two", rank: "SR", attack: 20, hp: 100, imagePath: "/cards/2.png", sortOrder: 2 },
       ],
       inventory: [{ cardId: 1, quantity: 1 }, { cardId: 2, quantity: 1 }],
+      player: { id: 7, nickname: "junhu", score: 1000 },
     });
-    assert.equal(persistedCount, 10);
+    assert.deepEqual(persistedRequest, { nickname: "junhu", count: 10 });
   });
 
   it("rejects malformed draw payloads", async () => {
@@ -42,7 +44,7 @@ describe("handleInventoryDrawPost", () => {
         method: "POST",
         body: JSON.stringify({ cardIds: [1, "2"] }),
       }),
-      async () => ({ persisted: true, drawnCards: [], inventory: [] }),
+      async () => ({ persisted: true, drawnCards: [], inventory: [], player: null }),
     );
 
     assert.equal(response.status, 400);
@@ -53,12 +55,13 @@ describe("handleInventoryDrawPost", () => {
     const response = await handleInventoryDrawPost(
       new Request("http://localhost/api/inventory/draws", {
         method: "POST",
-        body: JSON.stringify({ count: 1 }),
+        body: JSON.stringify({ nickname: "junhu", count: 1 }),
       }),
       async () => ({
         persisted: false,
         drawnCards: [{ id: 1, name: "One", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 }],
         inventory: [],
+        player: { id: 7, nickname: "junhu", score: 1000 },
       }),
     );
 
@@ -67,6 +70,25 @@ describe("handleInventoryDrawPost", () => {
       persisted: false,
       drawnCards: [{ id: 1, name: "One", rank: "R", attack: 10, hp: 100, imagePath: "/cards/1.png", sortOrder: 1 }],
       inventory: [],
+      player: { id: 7, nickname: "junhu", score: 1000 },
     });
+  });
+
+  it("returns unavailable when persistence cannot draw cards", async () => {
+    const response = await handleInventoryDrawPost(
+      new Request("http://localhost/api/inventory/draws", {
+        method: "POST",
+        body: JSON.stringify({ nickname: "junhu", count: 1 }),
+      }),
+      async () => ({
+        persisted: false,
+        drawnCards: [],
+        inventory: [],
+        player: null,
+      }),
+    );
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { persisted: false, drawnCards: [], inventory: [], player: null });
   });
 });

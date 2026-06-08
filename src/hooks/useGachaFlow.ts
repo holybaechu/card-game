@@ -3,9 +3,10 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
 import { recordInventoryDraw } from "@/lib/game/backend";
-import type { PlayerSession } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
 import { mergeInventoryEntries, type InventoryDrawInput, type InventoryEntry } from "@/lib/game/inventory";
+import { gachaRevealTiming } from "@/lib/game/animation";
+import type { PlayerSession } from "@/lib/game/player";
 import type { GameScreen } from "./useBattleFlow";
 
 export function useGachaFlow({
@@ -30,6 +31,7 @@ export function useGachaFlow({
     }
 
     let index = 0;
+    const intervalMs = gachaRevealTiming(gachaCount).intervalMs;
     const timer = window.setInterval(() => {
       const nextCard = pendingCards[index];
       if (!nextCard) {
@@ -47,10 +49,10 @@ export function useGachaFlow({
         setIsDrawing(false);
         setPendingCards([]);
       }
-    }, 100);
+    }, intervalMs);
 
     return () => window.clearInterval(timer);
-  }, [isDrawing, pendingCards]);
+  }, [isDrawing, pendingCards, gachaCount]);
 
   function openGacha() {
     setGachaCards([]);
@@ -60,11 +62,7 @@ export function useGachaFlow({
   }
 
   function startGacha(count: InventoryDrawInput["count"]) {
-    if (!player) {
-      return;
-    }
-
-    if (isDrawing) {
+    if (isDrawing || !player) {
       return;
     }
 
@@ -74,13 +72,12 @@ export function useGachaFlow({
     setIsDrawing(true);
 
     void recordInventoryDraw({ draw: { nickname: player.nickname, count } }).then((result) => {
+      if (result.player) {
+        setPlayer(result.player);
+      }
       if (result.drawnCards.length === 0) {
         setIsDrawing(false);
         return;
-      }
-
-      if (result.player) {
-        setPlayer(result.player);
       }
 
       if (result.persisted) {
