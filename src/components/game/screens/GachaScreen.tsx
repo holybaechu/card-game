@@ -35,6 +35,27 @@ export function GachaScreen({
       return;
     }
 
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      const cleanup = gsap.context(() => {
+        gsap.set(latestCard, {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          rotateY: 0,
+          x: 0,
+          y: 0,
+          filter: "brightness(1) saturate(1)",
+          transformPerspective: 900,
+          transformOrigin: "50% 50%",
+        });
+        gsap.set(flash, { opacity: 0, scale: 1 });
+        gsap.set(rings, { opacity: 0, scale: 1, rotate: 0 });
+      }, stage);
+
+      return () => cleanup.revert();
+    }
+
     const drift = gachaCount === 1 ? 0 : (cards.length % 2 === 0 ? -1 : 1) * gsap.utils.random(18, 52);
     const spin = gachaCount === 1 ? 900 : gsap.utils.random(360, 720);
     const flashDuration = revealTiming.effectSeconds * 0.31;

@@ -42,6 +42,19 @@ export function BattleScreen({ battle, rankedScore, screen }: { battle: BattleSt
       return;
     }
 
+    const effectNodes = [slash, laser, explosion, ...explosionBursts, fire, ...fireFlames].filter((node): node is HTMLElement => Boolean(node));
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      const ctx = gsap.context(() => {
+        gsap.set([attacker, defender], { filter: "brightness(1.02)" });
+        gsap.set(effectNodes, { opacity: 0, scale: 1, rotate: 0, x: 0, y: 0, filter: "brightness(1)" });
+        gsap.set(defenderHp, { filter: "brightness(1)" });
+      }, arena);
+
+      return () => ctx.revert();
+    }
+
     const ctx = gsap.context(() => {
       const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
       const effectNodes = [laser, explosion, fire, ...explosionBursts, ...fireFlames].filter((node): node is HTMLElement => Boolean(node));
