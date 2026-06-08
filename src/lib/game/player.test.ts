@@ -16,6 +16,11 @@ describe("parseNickname", () => {
     assert.throws(() => parseNickname("a".repeat(17)), /nickname/i);
     assert.throws(() => parseNickname("admin<script>"), /nickname/i);
   });
+
+  it("rejects non-space whitespace instead of normalizing it", () => {
+    assert.throws(() => parseNickname("ab\tcd"), /nickname/i);
+    assert.throws(() => parseNickname("ab\ncd"), /nickname/i);
+  });
 });
 
 describe("parsePlayerSessionInput", () => {
@@ -51,5 +56,26 @@ describe("player row mapping", () => {
       { id: 2, nickname: "high", score: 1200, place: 1, isActivePlayer: false },
       { id: 1, nickname: "low", score: 900, place: 2, isActivePlayer: true },
     ]);
+  });
+
+  it("sorts ranking ties by nickname", () => {
+    const rows = sortRankingRows([
+      { id: 1, nickname: "zeta", score: 1000 },
+      { id: 2, nickname: "alpha", score: 1000 },
+      { id: 3, nickname: "middle", score: 1000 },
+    ], 3);
+
+    assert.deepEqual(rows, [
+      { id: 2, nickname: "alpha", score: 1000, place: 1, isActivePlayer: false },
+      { id: 3, nickname: "middle", score: 1000, place: 2, isActivePlayer: true },
+      { id: 1, nickname: "zeta", score: 1000, place: 3, isActivePlayer: false },
+    ]);
+  });
+
+  it("rejects invalid player row ids and scores", () => {
+    assert.throws(() => mapPlayerRow({ id: 0, nickname: "junhu", score: 1000 }), /player id/i);
+    assert.throws(() => mapPlayerRow({ id: 1.5, nickname: "junhu", score: 1000 }), /player id/i);
+    assert.throws(() => mapPlayerRow({ id: 1, nickname: "junhu", score: -1 }), /score/i);
+    assert.throws(() => mapPlayerRow({ id: 1, nickname: "junhu", score: 1000.5 }), /score/i);
   });
 });

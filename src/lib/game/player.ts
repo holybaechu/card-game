@@ -30,7 +30,11 @@ export function parseNickname(value: unknown) {
     throw new Error("Player session requires a valid nickname");
   }
 
-  const nickname = value.trim().replace(/\s+/g, " ");
+  if (/[^\S ]/u.test(value)) {
+    throw new Error("Player session requires a valid nickname");
+  }
+
+  const nickname = value.trim();
   if (nickname.length < 2 || nickname.length > 16 || !nicknamePattern.test(nickname)) {
     throw new Error("Player session requires a valid nickname");
   }
