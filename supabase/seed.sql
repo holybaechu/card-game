@@ -31,4 +31,14 @@ values
   ('FlashKing', 1195, false),
   ('CardWizard', 1070, false);
 
+insert into public.game_players (nickname, score)
+select trim(player_name), max(score)
+from public.game_rankings
+where length(trim(player_name)) > 0
+group by trim(player_name)
+on conflict (nickname) do update
+set
+  score = excluded.score,
+  updated_at = now();
+
 select setval(pg_get_serial_sequence('public.game_cards', 'id'), (select max(id) from public.game_cards));
