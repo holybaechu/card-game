@@ -19,6 +19,18 @@
   }
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -31,9 +43,9 @@ button {
 
 .game-shell {
   position: relative;
-  min-height: 100svh;
+  height: 100svh;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   color: #ffffff;
   background:
     radial-gradient(circle at 8% 18%, rgba(255, 255, 255, 0.95) 0 2px, transparent 3px),
