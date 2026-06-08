@@ -1,6 +1,6 @@
-import { parsePlayerSessionInput, type PlayerSession } from "../../../../lib/game/player";
-import { upsertPlayerSession } from "../../../../lib/game/server-backend";
-import { createServerSupabaseClient } from "../../../../lib/supabase/server";
+import { parsePlayerSessionInput, type PlayerSession } from "@/lib/game/player";
+import { upsertPlayerSession } from "@/lib/game/server-backend";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 type PersistPlayerSession = (nickname: string) => Promise<PlayerSession | null>;
 

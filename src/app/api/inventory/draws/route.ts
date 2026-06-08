@@ -1,7 +1,7 @@
-import { parseDrawInventoryInput, type InventoryDrawInput } from "../../../../lib/game/inventory";
-import { persistInventoryDraw } from "../../../../lib/game/server-backend";
-import type { GameCard } from "../../../../lib/game/cards";
-import type { PlayerSession } from "../../../../lib/game/player";
+import { parseDrawInventoryInput, type InventoryDrawInput } from "@/lib/game/inventory";
+import { persistInventoryDraw } from "@/lib/game/server-backend";
+import type { GameCard } from "@/lib/game/cards";
+import type { PlayerSession } from "@/lib/game/player";
 
 type PersistInventoryDraw = (draw: InventoryDrawInput) => Promise<{
   persisted: boolean;

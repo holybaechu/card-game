@@ -1,6 +1,6 @@
-import { persistMatchResult } from "../../../lib/game/server-backend";
-import { parseMatchRequestInput, type MatchRequestInput, type PersistableMatchResult } from "../../../lib/game/matches";
-import type { PlayerSession, RankingEntry } from "../../../lib/game/player";
+import { persistMatchResult } from "@/lib/game/server-backend";
+import { parseMatchRequestInput, type MatchRequestInput, type PersistableMatchResult } from "@/lib/game/matches";
+import type { PlayerSession, RankingEntry } from "@/lib/game/player";
 
 type PersistMatch = (match: MatchRequestInput) => Promise<{
   persisted: boolean;

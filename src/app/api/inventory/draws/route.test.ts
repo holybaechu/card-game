@@ -73,4 +73,22 @@ describe("handleInventoryDrawPost", () => {
       player: { id: 7, nickname: "junhu", score: 1000 },
     });
   });
+
+  it("returns unavailable when persistence cannot draw cards", async () => {
+    const response = await handleInventoryDrawPost(
+      new Request("http://localhost/api/inventory/draws", {
+        method: "POST",
+        body: JSON.stringify({ nickname: "junhu", count: 1 }),
+      }),
+      async () => ({
+        persisted: false,
+        drawnCards: [],
+        inventory: [],
+        player: null,
+      }),
+    );
+
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { persisted: false, drawnCards: [], inventory: [], player: null });
+  });
 });
