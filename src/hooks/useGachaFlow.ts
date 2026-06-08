@@ -3,14 +3,19 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
 import { recordInventoryDraw } from "@/lib/game/backend";
+import type { PlayerSession } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
 import { mergeInventoryEntries, type InventoryDrawInput, type InventoryEntry } from "@/lib/game/inventory";
 import type { GameScreen } from "./useBattleFlow";
 
 export function useGachaFlow({
+  player,
+  setPlayer,
   setInventory,
   setScreen,
 }: {
+  player: PlayerSession | null;
+  setPlayer: Dispatch<SetStateAction<PlayerSession | null>>;
   setInventory: Dispatch<SetStateAction<InventoryEntry[]>>;
   setScreen: Dispatch<SetStateAction<GameScreen>>;
 }) {
@@ -55,6 +60,10 @@ export function useGachaFlow({
   }
 
   function startGacha(count: InventoryDrawInput["count"]) {
+    if (!player) {
+      return;
+    }
+
     if (isDrawing) {
       return;
     }
@@ -64,10 +73,14 @@ export function useGachaFlow({
     setPendingCards([]);
     setIsDrawing(true);
 
-    void recordInventoryDraw({ count }).then((result) => {
+    void recordInventoryDraw({ draw: { nickname: player.nickname, count } }).then((result) => {
       if (result.drawnCards.length === 0) {
         setIsDrawing(false);
         return;
+      }
+
+      if (result.player) {
+        setPlayer(result.player);
       }
 
       if (result.persisted) {

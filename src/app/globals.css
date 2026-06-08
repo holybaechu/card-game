@@ -111,6 +111,12 @@ button {
   text-shadow: 0 0 18px #fde047;
 }
 
+.owner-score {
+  margin: 6px 0 16px;
+  color: #e0e7ff;
+  font-size: 16px;
+}
+
 .game-title {
   margin: 12px 0 34px;
   font-size: 82px;
@@ -171,6 +177,49 @@ button {
   background: rgba(0, 0, 0, 0.28);
   box-shadow: 0 0 22px rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(10px);
+}
+
+.login-screen {
+  position: relative;
+  z-index: 2;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-panel {
+  display: grid;
+  gap: 12px;
+  width: min(360px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(10px);
+}
+
+.login-label {
+  color: #fde047;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.login-input {
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 0 14px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.32);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.login-error {
+  margin: 0;
+  color: #ffccd5;
+  font-size: 14px;
 }
 
 .playing-card {

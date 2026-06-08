@@ -4,19 +4,27 @@ import { useEffect, useState } from "react";
 
 import { createBattle, type BattleState } from "@/lib/game/battle";
 import { fallbackCards, type GameCard } from "@/lib/game/cards";
-import { fallbackRankings, getInitialGameData, type RankingEntry } from "@/lib/game/backend";
+import { getInitialGameData, type PlayerSession, type RankingEntry } from "@/lib/game/backend";
 import type { InventoryEntry } from "@/lib/game/inventory";
 
-export function useGameData() {
+export function useGameData({ player }: { player: PlayerSession | null }) {
   const [cards, setCards] = useState<GameCard[]>(fallbackCards);
-  const [rankings, setRankings] = useState<RankingEntry[]>(fallbackRankings);
+  const [rankings, setRankings] = useState<RankingEntry[]>([]);
   const [inventory, setInventory] = useState<InventoryEntry[]>([]);
   const [battle, setBattle] = useState<BattleState>(() => createBattle(fallbackCards));
 
   useEffect(() => {
     let active = true;
 
-    getInitialGameData().then((data) => {
+    if (!player) {
+      setCards(fallbackCards);
+      setRankings([]);
+      setInventory([]);
+      setBattle(createBattle(fallbackCards));
+      return;
+    }
+
+    getInitialGameData({ player }).then((data) => {
       if (!active) {
         return;
       }
@@ -25,12 +33,17 @@ export function useGameData() {
       setRankings(data.rankings);
       setInventory(data.inventory);
       setBattle(createBattle(data.cards));
+    }).catch(() => {
+      setCards(fallbackCards);
+      setRankings([]);
+      setInventory([]);
+      setBattle(createBattle(fallbackCards));
     });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [player]);
 
   return {
     battle,

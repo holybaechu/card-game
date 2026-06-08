@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateActio
 
 import { createBattle, updatePlayerScore, type BattleState, type BattleStatus } from "@/lib/game/battle";
 import { recordMatchResult, type RankingEntry } from "@/lib/game/backend";
+import type { PlayerSession } from "@/lib/game/backend";
 import type { GameCard } from "@/lib/game/cards";
 
 export type GameScreen = "home" | "normal" | "ranked" | "cards" | "ranking" | "gacha" | "matching";
@@ -14,16 +15,20 @@ export function useBattleFlow({
   cards,
   rankings,
   screen,
+  player,
   setBattle,
   setRankings,
+  setPlayer,
   setScreen,
 }: {
   battle: BattleState;
   cards: GameCard[];
   rankings: RankingEntry[];
   screen: GameScreen;
+  player: PlayerSession | null;
   setBattle: Dispatch<SetStateAction<BattleState>>;
   setRankings: Dispatch<SetStateAction<RankingEntry[]>>;
+  setPlayer: Dispatch<SetStateAction<PlayerSession | null>>;
   setScreen: Dispatch<SetStateAction<GameScreen>>;
 }) {
   const [pendingBattle, setPendingBattle] = useState<BattleMode | null>(null);
@@ -87,6 +92,10 @@ export function useBattleFlow({
       return;
     }
 
+    if (!player) {
+      return;
+    }
+
     const matchKey = `${screen}-${battle.player.id}-${battle.enemy.id}-${battle.tick}-${battle.status}`;
     if (recordedMatches.current.has(matchKey)) {
       return;
@@ -95,28 +104,54 @@ export function useBattleFlow({
     recordedMatches.current.add(matchKey);
 
     void recordMatchResult({
+      player,
       match: {
         mode: screen,
         playerCardId: battle.player.id,
         enemyCardId: battle.enemy.id,
+        nickname: player.nickname,
       },
     }).then((result) => {
-      if (result.persisted && result.match && result.match.scoreDelta > 0) {
+      if (!result.persisted) {
+        return;
+      }
+
+      if (result.player) {
+        setPlayer(result.player);
+      }
+
+      if (result.rankings.length > 0) {
+        setRankings(result.rankings);
+        return;
+      }
+
+      if (result.match && result.match.scoreDelta > 0) {
         setRankings((current) => updatePlayerScore(current, result.match?.scoreDelta ?? 0));
       }
     });
-  }, [battle.enemy.id, battle.player.id, battle.status, battle.tick, screen, setRankings]);
+  }, [battle.enemy.id, battle.player.id, battle.status, battle.tick, player, screen, setPlayer, setRankings]);
 
-  const rankedScore = rankings.find((entry) => entry.isPlayer)?.score ?? 1000;
-  const rankedRows = useMemo(
-    () =>
-      [...rankings]
-        .sort((a, b) => b.score - a.score)
-        .map((entry, index) => ({ ...entry, place: index + 1 })),
-    [rankings],
-  );
+  const rankedRows = useMemo(() => {
+    type RankingLike = RankingEntry & { id?: number; nickname?: string; isActivePlayer?: boolean };
+    const sorted = [...rankings].sort((a, b) => b.score - a.score);
+    return sorted.map((entry, index) => ({
+      id: (entry as RankingLike).id ?? index + 1_000_000,
+      nickname: (entry as RankingLike).nickname ?? entry.name,
+      score: entry.score,
+      isActivePlayer: player
+        ? (entry as RankingLike).id === player.id || (entry as RankingLike).isActivePlayer || entry.isPlayer
+        : (entry as RankingLike).isActivePlayer || entry.isPlayer,
+      place: index + 1,
+    }));
+  }, [player, rankings]);
+
+  const rankedScore = player?.score ?? rankedRows.find((entry) => entry.isActivePlayer)?.score ?? 1000;
 
   function startBattle(nextScreen: BattleMode) {
+    if (!player) {
+      return;
+    }
+
     setPendingBattle(nextScreen);
     setMatchingCountdown(3);
     setScreen("matching");

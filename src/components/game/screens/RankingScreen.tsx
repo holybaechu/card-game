@@ -1,6 +1,10 @@
-import type { RankingEntry } from "@/lib/game/backend";
-
-type RankedRow = RankingEntry & { place: number };
+type RankedRow = {
+  id: number;
+  nickname: string;
+  score: number;
+  place: number;
+  isActivePlayer: boolean;
+};
 
 export function RankingScreen({ rankedRows }: { rankedRows: RankedRow[] }) {
   return (
@@ -12,9 +16,9 @@ export function RankingScreen({ rankedRows }: { rankedRows: RankedRow[] }) {
       </div>
       <ol className="ranking-list">
         {rankedRows.map((entry) => (
-          <li className={entry.isPlayer ? "my-rank" : ""} key={entry.name}>
+          <li className={entry.isActivePlayer ? "my-rank" : ""} key={entry.id}>
             <span>{entry.place}</span>
-            <strong>{entry.name}</strong>
+            <strong>{entry.nickname}</strong>
             <em>{entry.score}</em>
           </li>
         ))}
