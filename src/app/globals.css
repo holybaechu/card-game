@@ -79,7 +79,7 @@ button {
   pointer-events: none;
   background: #ffffff;
   clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
-  animation: sparkle 1.35s infinite;
+  animation: sparkle 2.15s infinite;
 }
 
 .home-screen {
@@ -202,7 +202,7 @@ button {
 }
 
 .spinning-card {
-  animation: card-sway 2.4s ease-in-out infinite alternate, card-glow 1.8s ease-in-out infinite;
+  animation: card-sway 3.8s ease-in-out infinite alternate, card-glow 3.2s ease-in-out infinite;
 }
 
 .right-card .spinning-card {
@@ -256,7 +256,7 @@ button {
   z-index: 2;
   background: linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.65) 32%, transparent 48%);
   transform: translateX(-80%);
-  animation: card-shine 2.4s infinite;
+  animation: card-shine 3.4s infinite;
   pointer-events: none;
 }
 
@@ -355,7 +355,7 @@ button {
 }
 
 .matching-title {
-  animation: matching-pulse 0.9s ease-in-out infinite alternate;
+  animation: matching-pulse 1.65s ease-in-out infinite alternate;
 }
 
 .matching-count {
@@ -794,22 +794,22 @@ button {
 
 @keyframes card-sway {
   from {
-    transform: rotateY(-5.5deg) translateX(-4px);
+    transform: rotateY(-8.8deg) translateX(-8px);
   }
 
   to {
-    transform: rotateY(5.5deg) translateX(4px);
+    transform: rotateY(8.8deg) translateX(8px);
   }
 }
 
 @keyframes card-glow {
   0%,
   100% {
-    box-shadow: 0 0 24px #ffffff, 0 0 72px #ff00cc;
+    box-shadow: 0 0 36px #ffffff, 0 0 96px #ff00cc, 0 0 132px #00e5ff;
   }
 
   50% {
-    box-shadow: 0 0 42px #ffffff, 0 0 112px #00e5ff;
+    box-shadow: 0 0 68px #ffffff, 0 0 152px #00e5ff, 0 0 176px #ff00ff;
   }
 }
 
@@ -828,12 +828,12 @@ button {
   0%,
   100% {
     opacity: 0.2;
-    transform: scale(0.7) rotate(0deg);
+    transform: scale(0.56) rotate(0deg);
   }
 
   50% {
-    opacity: 1;
-    transform: scale(1.35) rotate(45deg);
+    opacity: 0.95;
+    transform: scale(1.72) rotate(56deg);
   }
 }
 
@@ -909,13 +909,39 @@ button {
 
 @keyframes matching-pulse {
   0% {
-    transform: scale(0.985);
-    filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.45)) brightness(1.02);
+    transform: scale(0.98);
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5)) brightness(1.03);
   }
 
   100% {
-    transform: scale(1.02);
-    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.72)) brightness(1.12);
+    transform: scale(1.045);
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.78)) brightness(1.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning-card,
+  .card-shine,
+  .sparkle,
+  .matching-title,
+  .gacha-flash,
+  .gacha-ring {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .battle-laser,
+  .battle-explosion,
+  .battle-fire,
+  .battle-slash {
+    transition-duration: 0.01ms !important;
+    transition-timing-function: linear !important;
+  }
+
+  .battle-screen *,
+  .gacha-screen *,
+  .home-screen * {
+    animation-iteration-count: 1 !important;
   }
 }
 

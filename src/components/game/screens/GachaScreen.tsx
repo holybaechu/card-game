@@ -1,5 +1,5 @@
 import { PlayingCard } from "@/components/game/PlayingCard";
-import { gachaAnimationLayout } from "@/lib/game/animation";
+import { gachaAnimationLayout, gachaRevealTiming } from "@/lib/game/animation";
 import type { GameCard } from "@/lib/game/cards";
 import type { InventoryDrawInput } from "@/lib/game/inventory";
 import { gsap } from "gsap";
@@ -18,6 +18,7 @@ export function GachaScreen({
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const layout = gachaAnimationLayout(gachaCount);
+  const revealTiming = gachaRevealTiming(gachaCount);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -36,6 +37,10 @@ export function GachaScreen({
 
     const drift = gachaCount === 1 ? 0 : (cards.length % 2 === 0 ? -1 : 1) * gsap.utils.random(18, 52);
     const spin = gachaCount === 1 ? 900 : gsap.utils.random(360, 720);
+    const flashDuration = revealTiming.effectSeconds * 0.31;
+    const ringDuration = revealTiming.effectSeconds * 0.47;
+    const settleDuration = revealTiming.effectSeconds * 0.38;
+    const settleScale = gachaCount === 1 ? 1.12 : 1.24;
     const ctx = gsap.context(() => {
       const timeline = gsap.timeline();
 
@@ -51,8 +56,8 @@ export function GachaScreen({
           transformPerspective: 900,
           transformOrigin: "50% 50%",
         })
-        .to(flash, { opacity: 0.95, scale: gachaCount === 1 ? 1.75 : 1.1, duration: 0.08, ease: "power1.out" }, 0)
-        .to(rings, { opacity: 0.85, scale: gachaCount === 1 ? 1.35 : 0.9, rotate: 180, stagger: 0.035, duration: 0.28, ease: "expo.out" }, 0)
+        .to(flash, { opacity: 0.95, scale: gachaCount === 1 ? 1.75 : 1.1, duration: flashDuration, ease: "power1.out" }, 0)
+        .to(rings, { opacity: 0.85, scale: gachaCount === 1 ? 1.35 : 0.9, rotate: 180, stagger: 0.035, duration: ringDuration, ease: "expo.out" }, 0)
         .to(
           latestCard,
           {
@@ -63,18 +68,24 @@ export function GachaScreen({
             x: 0,
             y: 0,
             filter: "brightness(1.7) saturate(1.7)",
-            duration: 0.38,
+            duration: settleDuration,
             ease: "back.out(2.8)",
           },
           0.02,
         )
-        .to(latestCard, { scale: 1, filter: "brightness(1) saturate(1)", duration: 0.2, ease: "elastic.out(1, 0.45)" }, ">-0.04")
-        .to(flash, { opacity: 0, scale: gachaCount === 1 ? 2.4 : 1.6, duration: 0.36, ease: "power3.out" }, 0.1)
-        .to(rings, { opacity: 0, scale: gachaCount === 1 ? 2.1 : 1.4, rotate: 420, duration: 0.5, ease: "power3.out" }, 0.08);
+        .to(latestCard, {
+          scale: settleScale,
+          filter: "brightness(1) saturate(1)",
+          duration: Math.max(0.18, revealTiming.effectSeconds * 0.28),
+          ease: "elastic.out(1, 0.45)",
+        }, ">-0.04")
+        .to(latestCard, { scale: 1, duration: settleDuration * 0.62, ease: "elastic.out(1, 0.45)" }, `>-${revealTiming.effectSeconds * 0.1}`)
+        .to(flash, { opacity: 0, scale: gachaCount === 1 ? 2.4 : 1.6, duration: flashDuration * 1.25, ease: "power3.out" }, 0.08)
+        .to(rings, { opacity: 0, scale: gachaCount === 1 ? 2.1 : 1.4, rotate: 420, duration: flashDuration * 1.56, ease: "power3.out" }, 0.12);
     }, stage);
 
     return () => ctx.revert();
-  }, [gachaCards.length, gachaCount]);
+  }, [gachaCards.length, gachaCount, revealTiming.effectSeconds]);
 
   return (
     <section className="gacha-screen" aria-label="가챠">
