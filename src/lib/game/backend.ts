@@ -1,19 +1,8 @@
 import { createGameSupabaseClient, getPublicSupabaseEnv, hasPublicSupabaseEnv, type PublicSupabaseEnv } from "@/lib/supabase/client";
 import { fallbackCards, mapCardRow, type CardRow, type GameCard } from "./cards";
 import { mapInventoryRow, type InventoryDrawInput, type InventoryEntry, type InventoryRow } from "./inventory";
+import { mapPlayerRow, sortRankingRows, type PlayerSession, type RankingEntry } from "./player";
 import type { MatchRequestInput, PersistableMatchResult } from "./matches";
-
-export type RankingEntry = {
-  name: string;
-  score: number;
-  isPlayer: boolean;
-};
-
-type RankingRow = {
-  player_name: string;
-  score: number;
-  is_player: boolean;
-};
 
 export type InitialGameData = {
   cards: GameCard[];
@@ -21,77 +10,183 @@ export type InitialGameData = {
   inventory: InventoryEntry[];
 };
 
-export const fallbackRankings: RankingEntry[] = [
-  { name: "배준후", score: 1000, isPlayer: true },
-  { name: "NeonMaster", score: 1360, isPlayer: false },
-  { name: "SparkQueen", score: 1280, isPlayer: false },
-  { name: "FlashKing", score: 1195, isPlayer: false },
-  { name: "CardWizard", score: 1070, isPlayer: false },
-];
+const emptyRankings: RankingEntry[] = [];
 
-function sortRankings(rankings: RankingEntry[]) {
-  return [...rankings].sort((a, b) => b.score - a.score);
+export const fallbackRankings = emptyRankings;
+
+function isPlayerRow(value: unknown): value is { id: unknown; nickname: unknown; score: unknown } {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const row = value as { id: unknown; nickname: unknown; score: unknown };
+  return ["id", "nickname", "score"].every((key) => key in row);
 }
 
-function mapRankingRow(row: RankingRow): RankingEntry {
-  return {
-    name: row.player_name,
-    score: row.score,
-    isPlayer: row.is_player,
-  };
+function mapPlayerFromBody(value: unknown): PlayerSession | null {
+  if (!isPlayerRow(value)) {
+    return null;
+  }
+
+  try {
+    return mapPlayerRow({ id: value.id as number, nickname: value.nickname as string, score: value.score as number });
+  } catch {
+    return null;
+  }
 }
 
-export async function getInitialGameData({ env = getPublicSupabaseEnv() }: { env?: PublicSupabaseEnv } = {}): Promise<InitialGameData> {
+export async function getPlayerSession({
+  nickname,
+  fetcher = fetch,
+}: {
+  nickname: string;
+  fetcher?: typeof fetch;
+}): Promise<PlayerSession | null> {
+  try {
+    const response = await fetcher("/api/player/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ nickname }),
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as unknown;
+    return mapPlayerFromBody(data);
+  } catch {
+    return null;
+  }
+}
+
+export async function getInitialGameData({
+  player,
+  env = getPublicSupabaseEnv(),
+}: {
+  player: PlayerSession;
+  env?: PublicSupabaseEnv;
+}): Promise<InitialGameData> {
   if (!hasPublicSupabaseEnv(env)) {
-    return { cards: fallbackCards, rankings: fallbackRankings, inventory: [] };
+    return { cards: fallbackCards, rankings: sortRankingRows([player], player.id), inventory: [] };
   }
 
   const supabase = createGameSupabaseClient(env);
   if (!supabase) {
-    return { cards: fallbackCards, rankings: fallbackRankings, inventory: [] };
+    return { cards: fallbackCards, rankings: sortRankingRows([player], player.id), inventory: [] };
   }
 
   const [cardsResponse, rankingsResponse, inventoryResponse] = await Promise.all([
     supabase.from("game_cards").select("id,name,rarity,attack,hp,image_path,sort_order").order("sort_order"),
-    supabase.from("game_rankings").select("player_name,score,is_player").order("score", { ascending: false }),
-    supabase.from("game_inventory").select("card_id,quantity").order("card_id"),
+    supabase.from("game_players").select("id,nickname,score").order("score", { ascending: false }),
+    supabase.from("game_inventory").select("card_id,quantity").eq("player_id", player.id).order("card_id"),
   ]);
 
   const cards = cardsResponse.error || !cardsResponse.data?.length ? fallbackCards : (cardsResponse.data as CardRow[]).map(mapCardRow);
   const rankings =
-    rankingsResponse.error || !rankingsResponse.data?.length ? fallbackRankings : sortRankings((rankingsResponse.data as RankingRow[]).map(mapRankingRow));
+    rankingsResponse.error || !rankingsResponse.data?.length
+      ? sortRankingRows([player], player.id)
+      : sortRankingRows(rankingsResponse.data as { id: number; nickname: string; score: number }[], player.id);
   const inventory = inventoryResponse.error || !inventoryResponse.data ? [] : (inventoryResponse.data as InventoryRow[]).map(mapInventoryRow);
 
   return { cards, rankings, inventory };
 }
 
+type InventoryApiResponse = {
+  persisted?: unknown;
+  drawnCards?: unknown;
+  inventory?: unknown;
+  player?: unknown;
+};
+
 export async function recordInventoryDraw({
-  count,
+  draw,
   fetcher = fetch,
 }: {
-  count: InventoryDrawInput["count"];
+  draw: InventoryDrawInput;
   fetcher?: typeof fetch;
-}): Promise<{ persisted: boolean; drawnCards: GameCard[]; inventory: InventoryEntry[] }> {
+}): Promise<{ persisted: boolean; drawnCards: GameCard[]; inventory: InventoryEntry[]; player: PlayerSession | null }> {
   try {
     const response = await fetcher("/api/inventory/draws", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ count }),
+      body: JSON.stringify(draw),
     });
 
     if (!response.ok) {
-      return { persisted: false, drawnCards: [], inventory: [] };
+      return { persisted: false, drawnCards: [], inventory: [], player: null };
     }
 
-    const data = (await response.json()) as { persisted?: unknown; drawnCards?: unknown; inventory?: unknown };
+    const data = (await response.json()) as InventoryApiResponse;
     return {
       persisted: data.persisted === true,
       drawnCards: Array.isArray(data.drawnCards) ? (data.drawnCards as GameCard[]) : [],
       inventory: Array.isArray(data.inventory) ? (data.inventory as InventoryEntry[]) : [],
+      player: mapPlayerFromBody(data.player),
     };
   } catch {
-    return { persisted: false, drawnCards: [], inventory: [] };
+    return { persisted: false, drawnCards: [], inventory: [], player: null };
   }
+}
+
+type MatchApiResponse = {
+  persisted?: unknown;
+  player?: unknown;
+  match?: unknown;
+  rankings?: unknown;
+};
+
+function mapMatchResult(value: unknown): PersistableMatchResult | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const maybeMatch = value as {
+    nickname?: unknown;
+    mode?: unknown;
+    playerCardId?: unknown;
+    enemyCardId?: unknown;
+    result?: unknown;
+    scoreDelta?: unknown;
+  };
+
+  if (
+    typeof maybeMatch.nickname !== "string" ||
+    !["normal", "ranked"].includes(maybeMatch.mode as "normal" | "ranked") ||
+    !Number.isInteger(maybeMatch.playerCardId as number) ||
+    !Number.isInteger(maybeMatch.enemyCardId as number) ||
+    !["player-win", "enemy-win", "draw"].includes(maybeMatch.result as "player-win" | "enemy-win" | "draw") ||
+    !Number.isInteger(maybeMatch.scoreDelta as number)
+  ) {
+    return null;
+  }
+
+  return {
+    nickname: maybeMatch.nickname,
+    mode: maybeMatch.mode as PersistableMatchResult["mode"],
+    playerCardId: maybeMatch.playerCardId as number,
+    enemyCardId: maybeMatch.enemyCardId as number,
+    result: maybeMatch.result as PersistableMatchResult["result"],
+    scoreDelta: maybeMatch.scoreDelta as number,
+  };
+}
+
+function mapRankingsFromBody(value: unknown): RankingEntry[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is RankingEntry => {
+    return (
+      !!entry &&
+      typeof entry === "object" &&
+      "id" in entry &&
+      "nickname" in entry &&
+      "score" in entry &&
+      "place" in entry &&
+      "isActivePlayer" in entry
+    );
+  });
 }
 
 export async function recordMatchResult({
@@ -100,7 +195,7 @@ export async function recordMatchResult({
 }: {
   match: MatchRequestInput;
   fetcher?: typeof fetch;
-}): Promise<{ persisted: boolean; match: PersistableMatchResult | null }> {
+}): Promise<{ persisted: boolean; match: PersistableMatchResult | null; player: PlayerSession | null; rankings: RankingEntry[] }> {
   try {
     const response = await fetcher("/api/matches", {
       method: "POST",
@@ -109,25 +204,19 @@ export async function recordMatchResult({
     });
 
     if (!response.ok) {
-      return { persisted: false, match: null };
+      return { persisted: false, match: null, player: null, rankings: [] };
     }
 
-    const data = (await response.json()) as PersistableMatchResult & { persisted?: unknown };
-    if (data.persisted !== true) {
-      return { persisted: false, match: null };
-    }
-
+    const data = (await response.json()) as MatchApiResponse;
+    const matchCandidate = "match" in (data as object) ? data.match : undefined;
+    const normalizedMatch = mapMatchResult(matchCandidate ?? data);
     return {
-      persisted: true,
-      match: {
-        mode: data.mode,
-        playerCardId: data.playerCardId,
-        enemyCardId: data.enemyCardId,
-        result: data.result,
-        scoreDelta: data.scoreDelta,
-      },
+      persisted: data.persisted === true,
+      match: normalizedMatch,
+      player: mapPlayerFromBody(data.player),
+      rankings: mapRankingsFromBody(data.rankings),
     };
   } catch {
-    return { persisted: false, match: null };
+    return { persisted: false, match: null, player: null, rankings: [] };
   }
 }
