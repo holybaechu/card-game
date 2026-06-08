@@ -88,6 +88,28 @@ describe("recordInventoryDraw", () => {
 
     assert.deepEqual(result, { persisted: false, drawnCards: [], inventory: [], player: null });
   });
+
+  it("filters malformed inventory entries returned from draw API", async () => {
+    const result = await recordInventoryDraw({
+      fetcher: async () =>
+        Response.json({
+          persisted: true,
+          drawnCards: [],
+          inventory: [
+            { cardId: 1, quantity: 2 },
+            { cardId: "bad", quantity: 3 },
+            { card_id: 5, quantity: 1 },
+            { cardId: 2 },
+          ],
+        }),
+      draw: { nickname: "junhu", count: 1 },
+    });
+
+    assert.deepEqual(result.inventory, [
+      { cardId: 1, quantity: 2 },
+      { cardId: 5, quantity: 1 },
+    ]);
+  });
 });
 
 describe("recordMatchResult", () => {
@@ -150,5 +172,34 @@ describe("recordMatchResult", () => {
     });
 
     assert.deepEqual(result, { persisted: false, match: null, player: null, rankings: [] });
+  });
+
+  it("filters malformed ranking entries returned from match API", async () => {
+    const result = await recordMatchResult({
+      fetcher: async () =>
+        Response.json({
+          persisted: true,
+          player: { id: 12, nickname: "junhu", score: 1000 },
+          mode: "ranked",
+          nickname: "junhu",
+          playerCardId: 1,
+          enemyCardId: 2,
+          scoreDelta: 25,
+          result: "player-win",
+          rankings: [
+            { id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true },
+            { id: "bad", nickname: "Bad", score: 100, place: 2, isActivePlayer: false },
+            { id: 14, score: 90, place: "three", isActivePlayer: true },
+          ],
+        }),
+      match: {
+        nickname: "junhu",
+        mode: "ranked",
+        playerCardId: 1,
+        enemyCardId: 2,
+      },
+    });
+
+    assert.deepEqual(result.rankings, [{ id: 12, nickname: "junhu", score: 1000, place: 1, isActivePlayer: true }]);
   });
 });
