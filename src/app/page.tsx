@@ -21,21 +21,8 @@ const NICKNAME_STORAGE_KEY = "cg:nickname";
 export default function Home() {
   const [screen, setScreen] = useState<GameScreen>("home");
   const [player, setPlayer] = useState<PlayerSession | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return Boolean(window.localStorage.getItem(NICKNAME_STORAGE_KEY));
-  });
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [savedNickname] = useState(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return window.localStorage.getItem(NICKNAME_STORAGE_KEY);
-  });
 
   const { battle, cards, inventory, rankings, setBattle, setInventory, setRankings } = useGameData(player);
   const { cancelPendingBattle, matchingCountdown, pendingBattle, rankedRows, rankedScore, startBattle } = useBattleFlow({
@@ -57,12 +44,21 @@ export default function Home() {
   });
 
   useEffect(() => {
-    if (!savedNickname) {
-      return;
-    }
-
     let isActive = true;
     const attemptAutoLogin = async () => {
+      const savedNickname = window.localStorage.getItem(NICKNAME_STORAGE_KEY);
+      if (!savedNickname) {
+        return;
+      }
+
+      await Promise.resolve();
+      if (!isActive) {
+        return;
+      }
+
+      setIsLoggingIn(true);
+      setLoginError(null);
+
       const nextPlayer = await getPlayerSession({ nickname: savedNickname });
       if (!isActive) {
         return;
@@ -82,7 +78,7 @@ export default function Home() {
     return () => {
       isActive = false;
     };
-  }, [savedNickname]);
+  }, []);
 
   function handleLoginSubmit(nickname: string) {
     const trimmedNickname = nickname.trim();
