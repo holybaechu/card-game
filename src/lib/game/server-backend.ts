@@ -4,21 +4,35 @@ import { drawRandomCards, mapInventoryRow, type InventoryDrawInput, type Invento
 import { createServerMatchResult, type MatchRequestInput, type PersistableMatchResult } from "./matches";
 import { mapPlayerRow, parseNickname, sortRankingRows, type PlayerRow, type PlayerSession, type RankingEntry } from "./player";
 
-type SupabaseClient = NonNullable<ReturnType<typeof createServerSupabaseClient>>;
-type CardQueryClient = Pick<SupabaseClient, "from">;
-type InventorySupabaseClient = {
-  rpc: (
-    name: string,
-    args: { target_player_id: number; drawn_card_ids: number[] },
-  ) => Promise<{
-    data: InventoryRow[] | null;
-    error: unknown;
-  }>;
+type QueryResponse<T> = PromiseLike<{ data: T | null; error: unknown }>;
+type ListQueryResponse<T> = PromiseLike<{ data: T[] | null; error: unknown }>;
+type SelectSingleBuilder<T> = { maybeSingle(): QueryResponse<T> };
+type SelectListBuilder<T> = { order(column: string, options?: { ascending?: boolean }): ListQueryResponse<T> };
+type SelectableSingleBuilder<T> = { select(columns: string): SelectSingleBuilder<T> };
+type CardTable = { select(columns: string): SelectListBuilder<CardRow> };
+type MatchTable = { insert(payload: Record<string, unknown>): PromiseLike<{ error: unknown }> };
+type PlayerTable = {
+  upsert(payload: { nickname: string }, options: { onConflict: "nickname" }): SelectableSingleBuilder<PlayerRow>;
+  select(columns: string): SelectListBuilder<PlayerRow>;
 };
-type InventoryPersistenceClient = InventorySupabaseClient & Partial<CardQueryClient>;
-type PlayerPersistenceClient = Pick<SupabaseClient, "from">;
+type TableClient = { from(table: string): unknown };
+type RpcClient = { rpc(name: string, args: Record<string, unknown>): QueryResponse<unknown> };
+type SupabaseClient = TableClient & RpcClient;
+type PlayerPersistenceClient = TableClient;
 
-async function loadServerCards(client: CardQueryClient | null, cards?: GameCard[]) {
+function cardTable(client: TableClient) {
+  return client.from("game_cards") as CardTable;
+}
+
+function matchTable(client: TableClient) {
+  return client.from("game_matches") as MatchTable;
+}
+
+function playerTable(client: TableClient) {
+  return client.from("game_players") as PlayerTable;
+}
+
+async function loadServerCards(client: TableClient | null, cards?: GameCard[]) {
   if (cards) {
     return cards;
   }
@@ -27,7 +41,7 @@ async function loadServerCards(client: CardQueryClient | null, cards?: GameCard[
     return fallbackCards;
   }
 
-  const response = await client.from("game_cards").select("id,name,rarity,attack,hp,image_path,sort_order").order("sort_order");
+  const response = await cardTable(client).select("id,name,rarity,attack,hp,image_path,sort_order").order("sort_order");
   if (response.error || !response.data?.length) {
     return fallbackCards;
   }
@@ -48,8 +62,7 @@ export async function upsertPlayerSession({
     return { id: 1, nickname: normalizedNickname, score: 1000 };
   }
 
-  const response = await client
-    .from("game_players")
+  const response = await playerTable(client)
     .upsert({ nickname: normalizedNickname }, { onConflict: "nickname" })
     .select("id,nickname,score")
     .maybeSingle();
@@ -70,7 +83,7 @@ async function loadPlayerRankings(client: PlayerPersistenceClient | null, active
     return sortRankingRows([activePlayer], activePlayer.id);
   }
 
-  const response = await client.from("game_players").select("id,nickname,score").order("score", { ascending: false });
+  const response = await playerTable(client).select("id,nickname,score").order("score", { ascending: false });
   if (response.error || !response.data?.length) {
     return sortRankingRows([activePlayer], activePlayer.id);
   }
@@ -79,7 +92,7 @@ async function loadPlayerRankings(client: PlayerPersistenceClient | null, active
 }
 
 export async function persistMatchResult({
-  client = createServerSupabaseClient(),
+  client = createServerSupabaseClient() as SupabaseClient | null,
   cards,
   match,
 }: {
@@ -95,7 +108,7 @@ export async function persistMatchResult({
     return { persisted: false, match: persistedMatch, player, rankings: await loadPlayerRankings(null, player) };
   }
 
-  const insertResponse = await client.from("game_matches").insert({
+  const insertResponse = await matchTable(client).insert({
     player_id: player.id,
     mode: persistedMatch.mode,
     player_card_id: persistedMatch.playerCardId,
@@ -110,38 +123,35 @@ export async function persistMatchResult({
 
   let currentPlayer = player;
   if (persistedMatch.scoreDelta > 0) {
-    const updateResponse = await client
-      .from("game_players")
-      .update({ score: Math.max(0, player.score + persistedMatch.scoreDelta) })
-      .eq("id", player.id)
-      .select("id,nickname,score")
-      .maybeSingle();
+    const updateResponse = await client.rpc("increment_game_player_score", {
+      target_player_id: player.id,
+      score_delta: persistedMatch.scoreDelta,
+    });
+    const updatedPlayerRow = Array.isArray(updateResponse.data) ? updateResponse.data[0] : updateResponse.data;
 
-    if (updateResponse.error || !updateResponse.data) {
+    if (updateResponse.error || !updatedPlayerRow) {
       return { persisted: false, match: null, player, rankings: await loadPlayerRankings(client, player) };
     }
 
-    currentPlayer = mapPlayerRow(updateResponse.data as PlayerRow);
+    currentPlayer = mapPlayerRow(updatedPlayerRow as PlayerRow);
   }
 
   return { persisted: true, match: persistedMatch, player: currentPlayer, rankings: await loadPlayerRankings(client, currentPlayer) };
 }
 
 export async function persistInventoryDraw({
-  client = createServerSupabaseClient() as InventoryPersistenceClient | null,
+  client = createServerSupabaseClient() as SupabaseClient | null,
   cards,
   draw,
   random,
 }: {
-  client?: InventoryPersistenceClient | null;
+  client?: SupabaseClient | null;
   cards?: GameCard[];
   draw: InventoryDrawInput;
   random?: () => number;
 }): Promise<{ persisted: boolean; drawnCards: GameCard[]; inventory: InventoryEntry[]; player: PlayerSession | null }> {
-  const cardClient = client && typeof client.from === "function" ? { from: client.from.bind(client) } : null;
-  const playerClient = client && typeof client.from === "function" ? { from: client.from.bind(client) } : null;
-  const player = await upsertPlayerSession({ client: playerClient, nickname: draw.nickname });
-  const drawnCards = drawRandomCards(await loadServerCards(cardClient, cards), draw.count, random);
+  const player = await upsertPlayerSession({ client, nickname: draw.nickname });
+  const drawnCards = drawRandomCards(await loadServerCards(client, cards), draw.count, random);
 
   if (!client || !player) {
     return { persisted: false, drawnCards, inventory: [], player };
@@ -155,7 +165,7 @@ export async function persistInventoryDraw({
   return {
     persisted: true,
     drawnCards,
-    inventory: response.data.map(mapInventoryRow),
+    inventory: (response.data as InventoryRow[]).map(mapInventoryRow),
     player,
   };
 }

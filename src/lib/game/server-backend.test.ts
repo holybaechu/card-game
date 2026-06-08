@@ -70,8 +70,7 @@ describe("persistMatchResult", () => {
 
   it("persists ranked wins against the resolved player and returns the updated player score", async () => {
     const inserts: unknown[] = [];
-    const updates: unknown[] = [];
-    const eqCalls: unknown[] = [];
+    const rpcCalls: unknown[] = [];
     const client = {
       from(table: string) {
         if (table === "game_players") {
@@ -84,23 +83,6 @@ describe("persistMatchResult", () => {
                   return {
                     maybeSingle() {
                       return Promise.resolve({ data: { id: 7, nickname: "junhu", score: 1000 }, error: null });
-                    },
-                  };
-                },
-              };
-            },
-            update(payload: unknown) {
-              updates.push(payload);
-              return {
-                eq(column: string, value: unknown) {
-                  eqCalls.push({ column, value });
-                  return {
-                    select() {
-                      return {
-                        maybeSingle() {
-                          return Promise.resolve({ data: { id: 7, nickname: "junhu", score: 1025 }, error: null });
-                        },
-                      };
                     },
                   };
                 },
@@ -130,6 +112,13 @@ describe("persistMatchResult", () => {
           },
         };
       },
+      rpc(name: string, args: unknown) {
+        rpcCalls.push({ name, args });
+        return Promise.resolve({
+          data: { id: 7, nickname: "junhu", score: 1025 },
+          error: null,
+        });
+      },
     };
 
     const result = await persistMatchResult({
@@ -151,8 +140,12 @@ describe("persistMatchResult", () => {
         score_delta: 25,
       },
     ]);
-    assert.deepEqual(updates, [{ score: 1025 }]);
-    assert.deepEqual(eqCalls, [{ column: "id", value: 7 }]);
+    assert.deepEqual(rpcCalls, [
+      {
+        name: "increment_game_player_score",
+        args: { target_player_id: 7, score_delta: 25 },
+      },
+    ]);
     assert.deepEqual(result.player, { id: 7, nickname: "junhu", score: 1025 });
     assert.deepEqual(result.rankings, [
       { id: 8, nickname: "alpha", score: 1100, place: 1, isActivePlayer: false },
