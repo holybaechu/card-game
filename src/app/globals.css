@@ -704,10 +704,10 @@ button {
   position: relative;
   z-index: 1;
   width: 100%;
-  min-height: 240px;
+  min-height: 210px;
   display: grid;
-  grid-template-columns: repeat(10, minmax(0, 92px));
-  gap: 16px;
+  grid-template-columns: repeat(10, minmax(0, 76px));
+  gap: 12px;
   justify-content: center;
   align-items: start;
 }
@@ -717,41 +717,41 @@ button {
 }
 
 .gacha-card-pop .playing-card {
-  width: min(92px, 100%);
+  width: min(76px, 100%);
 }
 
 .gacha-grid-single {
   grid-template-columns: minmax(0, 1fr);
-  min-height: min(560px, 66vh);
+  min-height: min(460px, 58vh);
   place-items: center;
 }
 
 .gacha-grid-showcase {
-  width: min(520px, 100%);
+  width: min(410px, 100%);
   justify-content: center;
   align-items: center;
 }
 
 .gacha-size-large .playing-card {
-  width: min(430px, 78vw);
+  width: min(340px, 70vw);
 }
 
 .gacha-grid-medium {
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .gacha-size-medium .playing-card {
-  width: min(220px, 100%);
+  width: min(170px, 100%);
 }
 
 .gacha-grid-large {
-  grid-template-columns: repeat(10, minmax(0, 70px));
-  gap: 10px;
+  grid-template-columns: repeat(10, minmax(0, 56px));
+  gap: 8px;
 }
 
 .gacha-grid-large .playing-card {
-  width: min(70px, 100%);
+  width: min(56px, 100%);
 }
 
 .gacha-grid-large .card-center {
@@ -1041,15 +1041,15 @@ button {
   }
 
   .gacha-grid {
-    grid-template-columns: repeat(5, minmax(0, 92px));
+    grid-template-columns: repeat(5, minmax(0, 76px));
   }
 
   .gacha-grid-large {
-    grid-template-columns: repeat(8, minmax(0, 64px));
+    grid-template-columns: repeat(8, minmax(0, 52px));
   }
 
   .gacha-grid-large .playing-card {
-    width: min(64px, 100%);
+    width: min(52px, 100%);
   }
 
   .gacha-grid-medium {
@@ -1058,11 +1058,11 @@ button {
   }
 
   .gacha-size-medium .playing-card {
-    width: min(180px, 100%);
+    width: min(145px, 100%);
   }
 
   .gacha-size-large .playing-card {
-    width: min(340px, 82vw);
+    width: min(300px, 72vw);
   }
 }
 
@@ -1126,12 +1126,12 @@ button {
   }
 
   .gacha-grid {
-    grid-template-columns: repeat(3, minmax(0, 82px));
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 66px));
+    gap: 10px;
   }
 
   .gacha-card-pop .playing-card {
-    width: min(82px, 100%);
+    width: min(66px, 100%);
   }
 
   .gacha-buttons {
@@ -1139,12 +1139,12 @@ button {
   }
 
   .gacha-grid-large {
-    grid-template-columns: repeat(4, minmax(0, 62px));
-    gap: 9px;
+    grid-template-columns: repeat(4, minmax(0, 50px));
+    gap: 8px;
   }
 
   .gacha-grid-large .playing-card {
-    width: min(62px, 100%);
+    width: min(50px, 100%);
   }
 
   .gacha-grid-medium {
@@ -1153,11 +1153,11 @@ button {
   }
 
   .gacha-size-medium .playing-card {
-    width: min(130px, 100%);
+    width: min(106px, 100%);
   }
 
   .gacha-size-large .playing-card {
-    width: min(280px, 100%);
+    width: min(240px, 100%);
   }
 
   .ranking-list li {
@@ -1177,11 +1177,11 @@ button {
   }
 
   .gacha-grid {
-    grid-template-columns: repeat(2, minmax(0, 86px));
+    grid-template-columns: repeat(2, minmax(0, 68px));
   }
 
   .gacha-grid-large {
-    grid-template-columns: repeat(3, minmax(0, 60px));
+    grid-template-columns: repeat(3, minmax(0, 48px));
   }
 
   .gacha-grid-medium {
@@ -1194,11 +1194,11 @@ button {
   }
 
   .gacha-size-medium .playing-card {
-    width: min(120px, 100%);
+    width: min(98px, 100%);
   }
 
   .gacha-size-large .playing-card {
-    width: min(260px, 100%);
+    width: min(220px, 100%);
   }
 
   .card-grid .card-center {
