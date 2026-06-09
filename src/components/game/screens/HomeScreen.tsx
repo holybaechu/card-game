@@ -31,6 +31,7 @@ export function HomeScreen({
           {player.nickname} / 점수 {player.score}
         </p>
         <h1 className="game-title">
+          배준후
           카드
           게임
         </h1>
