@@ -32,10 +32,9 @@ export function HomeScreen({
         </p>
         <h1 className="game-title">
           카드
-          <br />
           게임
         </h1>
-        <button className="neon-button compact home-logout-button" onClick={onLogout} type="button">
+        <button className="neon-button compact home-logout-button mb-4" onClick={onLogout} type="button">
           로그아웃
         </button>
         <nav className="home-menu" aria-label="메인 게임 메뉴">
